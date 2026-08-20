@@ -222,8 +222,10 @@ GodModeBtn.MouseButton1Click:Connect(function()
 		if not currentRoot then return end
 
 		local originalCFrame = currentRoot.CFrame
+		-- 瞬間傳送到 2000 格高空
 		currentRoot.CFrame = originalCFrame + Vector3.new(0, 2000, 0)
 
+		-- 飛到空中後的初始緩衝
 		task.wait(0.1)
 
 		local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
@@ -241,7 +243,15 @@ GodModeBtn.MouseButton1Click:Connect(function()
 				if remotesFolder then
 					for _, remote in ipairs(remotesFolder:GetChildren()) do
 						if remote:IsA("RemoteEvent") and remote.Name:lower():find("death") then
+							
+							-- 【放技能前】多夾入 0.1 秒
+							task.wait(0.1)
+							
 							remote:FireServer()
+							
+							-- 【放技能後】多夾入 0.1 秒
+							task.wait(0.1)
+							
 							break
 						end
 					end
@@ -249,7 +259,8 @@ GodModeBtn.MouseButton1Click:Connect(function()
 			end
 		end
 
-		task.wait(0.9)
+		-- 最後整體的緩衝與返回原點
+		task.wait(0.7)
 
 		if currentCharacter and currentRoot then
 			currentRoot.CFrame = originalCFrame
