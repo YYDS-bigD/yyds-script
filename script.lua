@@ -24,7 +24,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 210, 0, 340) -- 稍微加高一點放新按鈕
+Main.Size = UDim2.new(0, 210, 0, 310)
 Main.Position = UDim2.new(1, -220, 0.1, 0)
 Main.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 Main.BorderSizePixel = 0
@@ -88,7 +88,7 @@ CloseBtn.MouseButton1Click:Connect(function()
 	ScreenGui.Enabled = false
 end)
 
--- ==================== Minimize Icon ====================
+-- ==================== Minimize Icon (胡迪圖) ====================
 local MinimizeIcon = Instance.new("ImageButton")
 MinimizeIcon.Name = "MinimizeIcon"
 MinimizeIcon.Size = UDim2.new(0, 58, 0, 58)
@@ -222,8 +222,10 @@ GodModeBtn.MouseButton1Click:Connect(function()
 		if not currentRoot then return end
 
 		local originalCFrame = currentRoot.CFrame
+		-- 瞬間傳送到 2000 格高空
 		currentRoot.CFrame = originalCFrame + Vector3.new(0, 2000, 0)
 
+		-- 飛到空中後的初始緩衝
 		task.wait(0.1)
 
 		local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
@@ -241,9 +243,15 @@ GodModeBtn.MouseButton1Click:Connect(function()
 				if remotesFolder then
 					for _, remote in ipairs(remotesFolder:GetChildren()) do
 						if remote:IsA("RemoteEvent") and remote.Name:lower():find("death") then
+							
+							-- 【放技能前】多夾入 0.1 秒
 							task.wait(0.1)
+							
 							remote:FireServer()
+							
+							-- 【放技能後】多夾入 0.1 秒
 							task.wait(0.1)
+							
 							break
 						end
 					end
@@ -251,187 +259,13 @@ GodModeBtn.MouseButton1Click:Connect(function()
 			end
 		end
 
+		-- 最後整體的緩衝與返回原點
 		task.wait(0.7)
 
 		if currentCharacter and currentRoot then
 			currentRoot.CFrame = originalCFrame
 		end
 	end)
-end)
-
--- ==================== Laser Eyes Button ====================
-local LaserContainer = Instance.new("Frame")
-LaserContainer.Size = UDim2.new(1, -8, 0, 26)
-LaserContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-LaserContainer.BorderSizePixel = 0
-LaserContainer.Parent = Main
-
-local LaserBtn = Instance.new("TextButton")
-LaserBtn.Size = UDim2.new(1, -8, 0, 20)
-LaserBtn.Position = UDim2.new(0, 4, 0, 3)
-LaserBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 90)
-LaserBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
-LaserBtn.Font = Enum.Font.GothamBold
-LaserBtn.TextSize = 11
-LaserBtn.Text = "Laser Eyes"
-LaserBtn.Parent = LaserContainer
-
-local LaserCorner = Instance.new("UICorner")
-LaserCorner.CornerRadius = UDim.new(0, 4)
-LaserCorner.Parent = LaserBtn
-
--- ==================== Laser Floating Panel ====================
-local laserActive = false
-local laserThread = nil
-
-local LaserPanel = Instance.new("Frame")
-LaserPanel.Size = UDim2.new(0, 140, 0, 50)
-LaserPanel.Position = UDim2.new(0.5, -70, 0.4, 0)
-LaserPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-LaserPanel.BorderSizePixel = 0
-LaserPanel.Visible = false
-LaserPanel.ZIndex = 30
-LaserPanel.Parent = ScreenGui
-
-local LaserPanelCorner = Instance.new("UICorner")
-LaserPanelCorner.CornerRadius = UDim.new(0, 8)
-LaserPanelCorner.Parent = LaserPanel
-
-local LaserPanelStroke = Instance.new("UIStroke")
-LaserPanelStroke.Color = Color3.fromRGB(80, 80, 180)
-LaserPanelStroke.Thickness = 2
-LaserPanelStroke.Parent = LaserPanel
-
-local LaserStatus = Instance.new("TextLabel")
-LaserStatus.Size = UDim2.new(1, 0, 1, 0)
-LaserStatus.BackgroundTransparency = 1
-LaserStatus.Text = "Laser Eyes OFF"
-LaserStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
-LaserStatus.Font = Enum.Font.GothamBold
-LaserStatus.TextSize = 14
-LaserStatus.Parent = LaserPanel
-
--- Lock button for Laser Panel (bottom left)
-local laserPanelLocked = false
-
-local LaserLockBtn = Instance.new("TextButton")
-LaserLockBtn.Size = UDim2.new(0, 20, 0, 20)
-LaserLockBtn.Position = UDim2.new(0, 4, 1, -24)
-LaserLockBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-LaserLockBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-LaserLockBtn.Font = Enum.Font.GothamBold
-LaserLockBtn.TextSize = 11
-LaserLockBtn.Text = "🔓"
-LaserLockBtn.ZIndex = 31
-LaserLockBtn.Parent = LaserPanel
-
-local LaserLockCorner = Instance.new("UICorner")
-LaserLockCorner.CornerRadius = UDim.new(0, 4)
-LaserLockCorner.Parent = LaserLockBtn
-
-LaserLockBtn.MouseButton1Click:Connect(function()
-	laserPanelLocked = not laserPanelLocked
-	if laserPanelLocked then
-		LaserLockBtn.Text = "🔒"
-		LaserLockBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
-	else
-		LaserLockBtn.Text = "🔓"
-		LaserLockBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-	end
-end)
-
--- Drag Laser Panel
-local laserDragging = false
-local laserDragStart, laserStartPos
-
-LaserPanel.InputBegan:Connect(function(input)
-	if laserPanelLocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		laserDragging = true
-		laserDragStart = input.Position
-		laserStartPos = LaserPanel.Position
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		laserDragging = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if laserPanelLocked then return end
-	if laserDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - laserDragStart
-		LaserPanel.Position = UDim2.new(
-			laserStartPos.X.Scale,
-			laserStartPos.X.Offset + delta.X,
-			laserStartPos.Y.Scale,
-			laserStartPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
--- Laser Eyes Toggle Logic
-local function FindMoveOneRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder.Name:lower():find("homelander") then
-			local remotes = folder:FindFirstChild("Remotes")
-			if remotes then
-				local moveOne = remotes:FindFirstChild("MoveOne")
-				if moveOne and moveOne:IsA("RemoteEvent") then
-					return moveOne
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function StartLaserLoop()
-	if laserThread then
-		task.cancel(laserThread)
-		laserThread = nil
-	end
-
-	laserThread = task.spawn(function()
-		while laserActive do
-			local remote = FindMoveOneRemote()
-			if remote then
-				remote:FireServer()
-			end
-			task.wait() -- 最快速度循環
-		end
-	end)
-end
-
-local function StopLaserLoop()
-	laserActive = false
-	if laserThread then
-		task.cancel(laserThread)
-		laserThread = nil
-	end
-end
-
-LaserBtn.MouseButton1Click:Connect(function()
-	laserActive = not laserActive
-
-	if laserActive then
-		LaserPanel.Visible = true
-		LaserStatus.Text = "Laser Eyes ON"
-		LaserStatus.TextColor3 = Color3.fromRGB(80, 255, 120)
-		LaserBtn.BackgroundColor3 = Color3.fromRGB(40, 90, 40)
-		StartLaserLoop()
-	else
-		LaserPanel.Visible = false
-		LaserStatus.Text = "Laser Eyes OFF"
-		LaserStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
-		LaserBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 90)
-		StopLaserLoop()
-	end
 end)
 
 -- Loop (1.0s)
@@ -596,7 +430,7 @@ CustomInput:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1, 0, 1, -130) -- 調整高度
+Scroll.Size = UDim2.new(1, 0, 1, -100)
 Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 Scroll.ScrollBarThickness = 4
 Scroll.BackgroundTransparency = 1
@@ -655,4 +489,155 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
-U
+UIS.InputChanged:Connect(function(input)
+	if isWindowLocked then return end
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Logic & Search
+local currentLoopThread = nil
+
+local function Refresh()
+	for _, child in ipairs(Scroll:GetChildren()) do
+		if child:IsA("TextButton") or child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+
+	local searchText = SearchBox.Text:lower()
+
+	local function MakeButton(text, callback)
+		local B = Instance.new("TextButton")
+		B.Size = UDim2.new(1, -6, 0, 20)
+		B.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+		B.TextColor3 = Color3.fromRGB(230, 230, 230)
+		B.Font = Enum.Font.Gotham
+		B.TextSize = 11
+		B.Text = text
+		B.Parent = Scroll
+
+		local BC = Instance.new("UICorner")
+		BC.CornerRadius = UDim.new(0, 3)
+		BC.Parent = B
+
+		B.MouseButton1Click:Connect(callback or function() end)
+		return B
+	end
+
+	local function MakeCategory(label)
+		local L = Instance.new("TextLabel")
+		L.Size = UDim2.new(1, -6, 0, 18)
+		L.BackgroundColor3 = Color3.fromRGB(45, 25, 70)
+		L.TextColor3 = Color3.fromRGB(240, 220, 255)
+		L.Font = Enum.Font.GothamBold
+		L.TextSize = 11
+		L.Text = "== " .. label .. " =="
+		L.Parent = Scroll
+
+		local LC = Instance.new("UICorner")
+		LC.CornerRadius = UDim.new(0, 3)
+		LC.Parent = L
+
+		return L
+	end
+
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then
+		MakeButton("[ERROR] No ReplicatedStorage.Characters folder found", function() end)
+		return
+	end
+
+	for _, characterFolder in ipairs(charactersFolder:GetChildren()) do
+		if characterFolder:IsA("Folder") or characterFolder:IsA("Model") then
+			local charName = characterFolder.Name
+			local remotesFolder = characterFolder:FindFirstChild("Remotes")
+			local matchedAbilities = {}
+
+			if remotesFolder then
+				for _, remote in ipairs(remotesFolder:GetChildren()) do
+					if remote:IsA("RemoteEvent") then
+						local abilityName = remote.Name
+						if searchText == "" or charName:lower():find(searchText) or abilityName:lower():find(searchText) then
+							table.insert(matchedAbilities, {remote = remote, name = abilityName})
+						end
+					end
+				end
+			end
+
+			if searchText == "" or charName:lower():find(searchText) or #matchedAbilities > 0 then
+				MakeCategory(charName)
+
+				if #matchedAbilities == 0 then
+					MakeButton("[NO REMOTES] " .. charName, function() end)
+				else
+					for _, data in ipairs(matchedAbilities) do
+						MakeButton("[Ability] " .. data.name, function()
+							if loopInterval > 0 then
+								if currentLoopThread then
+									task.cancel(currentLoopThread)
+									currentLoopThread = nil
+								end
+
+								local interval = loopInterval
+								currentLoopThread = task.spawn(function()
+									while loopInterval > 0 do
+										data.remote:FireServer()
+										task.wait(interval)
+									end
+								end)
+							else
+								if currentLoopThread then
+									task.cancel(currentLoopThread)
+									currentLoopThread = nil
+								end
+								data.remote:FireServer()
+							end
+						end)
+					end
+				end
+			end
+		end
+	end
+
+	task.wait()
+	Scroll.CanvasSize = UDim2.new(0, 0, 0, List.AbsoluteContentSize.Y + 10)
+end
+
+local function AutoDetectCharacter()
+	local char = LocalPlayer.Character
+	if char then
+		local charName = char.Name
+		local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+		if charactersFolder then
+			for _, folder in ipairs(charactersFolder:GetChildren()) do
+				if folder.Name:lower() == charName:lower() then
+					SearchBox.Text = folder.Name
+					return
+				end
+			end
+		end
+	end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+	Character = newChar
+	task.wait(1)
+	AutoDetectCharacter()
+end)
+
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	Refresh()
+end)
+
+AutoDetectCharacter()
+Refresh()
+
+RunService.RenderStepped:Connect(function()
+	if ScreenGui.Enabled then
+		UIS.MouseBehavior = Enum.MouseBehavior.Default
+		UIS.MouseIconEnabled = true
+	end
+end)
