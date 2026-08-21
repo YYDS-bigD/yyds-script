@@ -42,9 +42,7 @@ Main.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
 local MainCorner = Instance.new("UICorner") MainCorner.CornerRadius = UDim.new(0,8) MainCorner.Parent = Main
-local uiScale = Instance.new("UIScale") uiScale.Scale = 1 uiScale.Parent = Main
-
-local TopBar = Instance.new("Frame")
+local uiScale = Instance.new("UIScale") uiScale.Scale = 1 uiScale.Parent = Mainlocal TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1,0,0,30)
 TopBar.BackgroundColor3 = Color3.fromRGB(22,22,22)
 TopBar.BorderSizePixel = 0
@@ -87,9 +85,7 @@ UIS.InputChanged:Connect(function(input)
 		local delta = input.Position - iconDragStart
 		MinimizeIcon.Position = UDim2.new(iconStartPos.X.Scale, iconStartPos.X.Offset + delta.X, iconStartPos.Y.Scale, iconStartPos.Y.Offset + delta.Y)
 	end
-end)
-
-local TabContainer = Instance.new("Frame")
+end)local TabContainer = Instance.new("Frame")
 TabContainer.Size = UDim2.new(1,0,0,32) TabContainer.Position = UDim2.new(0,0,0,30) TabContainer.BackgroundColor3 = Color3.fromRGB(18,18,18) TabContainer.BorderSizePixel = 0 TabContainer.Parent = Main
 
 local Tab1 = Instance.new("TextButton")
@@ -116,7 +112,9 @@ end)
 Tab2.MouseButton1Click:Connect(function()
 	Page1.Visible = false Page2.Visible = true Tab2.BackgroundColor3 = Color3.fromRGB(80,50,120) Tab2.TextColor3 = Color3.fromRGB(255,255,255)
 	Tab1.BackgroundColor3 = Color3.fromRGB(35,35,35) Tab1.TextColor3 = Color3.fromRGB(180,180,180)
-end)-- ==================== 第一頁 Scanner ====================
+end)
+
+-- ==================== 第一頁 Scanner ====================
 local SearchBox = Instance.new("TextBox")
 SearchBox.Size = UDim2.new(1,-10,0,22) SearchBox.Position = UDim2.new(0,5,0,3) SearchBox.BackgroundColor3 = Color3.fromRGB(28,28,28)
 SearchBox.TextColor3 = Color3.fromRGB(240,240,240) SearchBox.PlaceholderText = "Search..." SearchBox.Text = "" SearchBox.Font = Enum.Font.Gotham SearchBox.TextSize = 11 SearchBox.ClearTextOnFocus = false SearchBox.Parent = Page1
@@ -163,9 +161,7 @@ GodModeBtn.MouseButton1Click:Connect(function()
 		task.wait(0.7)
 		if currentCharacter and currentRoot then currentRoot.CFrame = originalCFrame end
 	end)
-end)
-
-local LoopContainer1 = Instance.new("Frame")
+end)local LoopContainer1 = Instance.new("Frame")
 LoopContainer1.Size = UDim2.new(1,-10,0,20) LoopContainer1.Position = UDim2.new(0,5,0,49) LoopContainer1.BackgroundColor3 = Color3.fromRGB(20,20,20) LoopContainer1.BorderSizePixel = 0 LoopContainer1.Parent = Page1
 local LoopContainer1Corner = Instance.new("UICorner") LoopContainer1Corner.CornerRadius = UDim.new(0,4) LoopContainer1Corner.Parent = LoopContainer1
 
@@ -297,9 +293,7 @@ SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
 SettingsContent.Parent = Page2
-local SettingsContentCorner = Instance.new("UICorner") SettingsContentCorner.CornerRadius = UDim.new(0,4) SettingsContentCorner.Parent = SettingsContent
-
-local SliderTitle = Instance.new("TextLabel")
+local SettingsContentCorner = Instance.new("UICorner") SettingsContentCorner.CornerRadius = UDim.new(0,4) SettingsContentCorner.Parent = SettingsContentlocal SliderTitle = Instance.new("TextLabel")
 SliderTitle.Size = UDim2.new(1,-10,0,18) SliderTitle.Position = UDim2.new(0,5,0,5) SliderTitle.BackgroundTransparency = 1
 SliderTitle.TextColor3 = Color3.fromRGB(220,220,220) SliderTitle.Font = Enum.Font.GothamBold SliderTitle.TextSize = 11 SliderTitle.Text = "UI Scale" SliderTitle.TextXAlignment = Enum.TextXAlignment.Left SliderTitle.Parent = SettingsContent
 
@@ -335,7 +329,9 @@ SettingsFoldBtn.MouseButton1Click:Connect(function()
 	settingsOpen = not settingsOpen
 	SettingsContent.Visible = settingsOpen
 	SettingsFoldBtn.Text = settingsOpen and "Settings ▲" or "Settings ▼"
-end)-- ==================== 浮動按鈕容器 ====================
+end)
+
+-- ==================== 浮動按鈕容器 ====================
 local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "DracoHubFloatingButtons"
 FloatingGui.ResetOnSpawn = false
