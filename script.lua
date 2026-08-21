@@ -21,11 +21,12 @@ local Root = Character:WaitForChild("HumanoidRootPart")
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DracoHubScannerV7"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true  -- 主選單頂到最上邊
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Main = Instance.new("Frame")
 Main.Size = UDim2.new(0, 210, 0, 310)
-Main.Position = UDim2.new(1, -220, 0.1, 0)
+Main.Position = UDim2.new(1, -220, 0, 0)
 Main.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
@@ -88,14 +89,14 @@ CloseBtn.MouseButton1Click:Connect(function()
 	ScreenGui.Enabled = false
 end)
 
--- ==================== Minimize Icon (胡迪圖) ====================
+-- ==================== Minimize Icon ====================
 local MinimizeIcon = Instance.new("ImageButton")
 MinimizeIcon.Name = "MinimizeIcon"
 MinimizeIcon.Size = UDim2.new(0, 58, 0, 58)
-MinimizeIcon.Position = UDim2.new(0, 12, 0.38, 0)
+MinimizeIcon.Position = UDim2.new(0, 12, 0.10, 0)  -- 不要頂到最上面，保持之前舒服的高度
 MinimizeIcon.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-MinimizeIcon.BackgroundTransparency = 0
-MinimizeIcon.Image = "rbxassetid://79733047167022"
+MinimizeIcon.BackgroundTransparency = 1
+MinimizeIcon.Image = "rbxassetid://90728112297914"
 MinimizeIcon.ScaleType = Enum.ScaleType.Fit
 MinimizeIcon.AutoButtonColor = false
 MinimizeIcon.Visible = false
@@ -105,11 +106,6 @@ MinimizeIcon.Parent = ScreenGui
 local IconCorner = Instance.new("UICorner")
 IconCorner.CornerRadius = UDim.new(0, 12)
 IconCorner.Parent = MinimizeIcon
-
-local IconStroke = Instance.new("UIStroke")
-IconStroke.Color = Color3.fromRGB(255, 100, 100)
-IconStroke.Thickness = 2
-IconStroke.Parent = MinimizeIcon
 
 -- Minimize / Restore
 MinusBtn.MouseButton1Click:Connect(function()
