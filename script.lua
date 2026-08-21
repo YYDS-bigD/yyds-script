@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
+-- 清理舊 GUI
 local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubScannerV7")
 if oldGui then oldGui:Destroy() end
 local oldLaserGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubLaserButton")
@@ -27,28 +28,6 @@ local DEFAULT_POSITIONS = {
 	Overthrow = UDim2.new(1, -310, 0.5, 40),
 	Flashstrike = UDim2.new(1, -310, 0.5, -110)
 }
-
-local function getSavedPosition(buttonName, defaultPos)
-	local saved = LocalPlayer:GetAttribute(buttonName .. "Pos")
-	if saved then
-		local parts = {}
-		for part in saved:gmatch("[^,]+") do table.insert(parts, part) end
-		if #parts == 4 then
-			local xScale = tonumber(parts[1])
-			local xOffset = tonumber(parts[2])
-			local yScale = tonumber(parts[3])
-			local yOffset = tonumber(parts[4])
-			if xScale and xOffset and yScale and yOffset then
-				return UDim2.new(xScale, xOffset, yScale, yOffset)
-			end
-		end
-	end
-	return defaultPos
-end
-
-local function savePosition(buttonName, pos)
-	LocalPlayer:SetAttribute(buttonName .. "Pos", string.format("%.4f,%.0f,%.4f,%.0f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset))
-end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DracoHubScannerV7"
@@ -120,7 +99,8 @@ local Tab1Corner = Instance.new("UICorner") Tab1Corner.CornerRadius = UDim.new(0
 
 local Tab2 = Instance.new("TextButton")
 Tab2.Size = UDim2.new(0.5,-2,1,-4) Tab2.Position = UDim2.new(0.5,0,0,2) Tab2.BackgroundColor3 = Color3.fromRGB(35,35,35)
-Tab2.TextColor3 = Color3.fromRGB(180,180,180) Tab2.Font = Enum.Font.GothamBold Tab2.TextSize = 11 Tab2.Text = "Settings" Tab2.Parent = TabContainer
+Tab2.TextColor3 = Color3.fromRGB(180,180,180) Tab2.Font = Enum.Font.GothamBold Tab2.TextSize = 11 Tab2.Text = "Extras"
+Tab2.Parent = TabContainer
 local Tab2Corner = Instance.new("UICorner") Tab2Corner.CornerRadius = UDim.new(0,4) Tab2Corner.Parent = Tab2
 
 local Page1 = Instance.new("Frame")
@@ -136,8 +116,7 @@ end)
 Tab2.MouseButton1Click:Connect(function()
 	Page1.Visible = false Page2.Visible = true Tab2.BackgroundColor3 = Color3.fromRGB(80,50,120) Tab2.TextColor3 = Color3.fromRGB(255,255,255)
 	Tab1.BackgroundColor3 = Color3.fromRGB(35,35,35) Tab1.TextColor3 = Color3.fromRGB(180,180,180)
-end)
-
+end)-- ==================== 第一頁 Scanner ====================
 local SearchBox = Instance.new("TextBox")
 SearchBox.Size = UDim2.new(1,-10,0,22) SearchBox.Position = UDim2.new(0,5,0,3) SearchBox.BackgroundColor3 = Color3.fromRGB(28,28,28)
 SearchBox.TextColor3 = Color3.fromRGB(240,240,240) SearchBox.PlaceholderText = "Search..." SearchBox.Text = "" SearchBox.Font = Enum.Font.Gotham SearchBox.TextSize = 11 SearchBox.ClearTextOnFocus = false SearchBox.Parent = Page1
@@ -229,7 +208,7 @@ CustomLabel.TextColor3 = Color3.fromRGB(200,200,200) CustomLabel.Font = Enum.Fon
 
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1,-4,1,-95) Scroll.Position = UDim2.new(0,2,0,93) Scroll.CanvasSize = UDim2.new(0,0,0,0) Scroll.ScrollBarThickness = 4 Scroll.BackgroundTransparency = 1 Scroll.Parent = Page1
-local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll-- ==================== 第二頁 Settings ====================
+local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll-- ==================== 第二頁 Extras ====================
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -266,9 +245,9 @@ MoveModeBtn.Parent = Page2
 local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UDim.new(0,4) MoveModeCorner.Parent = MoveModeBtn
 
 local ResetPosBtn = Instance.new("TextButton")
-ResetPosBtn.Size = UDim2.new(0.5, -8, 0, 20)
+ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
 ResetPosBtn.Position = UDim2.new(0, 5, 0, 74)
-ResetPosBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResetPosBtn.Font = Enum.Font.GothamBold
 ResetPosBtn.TextSize = 10
@@ -276,18 +255,6 @@ ResetPosBtn.Text = "Reset"
 ResetPosBtn.Visible = false
 ResetPosBtn.Parent = Page2
 local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UDim.new(0,4) ResetPosCorner.Parent = ResetPosBtn
-
-local SavePosBtn = Instance.new("TextButton")
-SavePosBtn.Size = UDim2.new(0.5, -8, 0, 20)
-SavePosBtn.Position = UDim2.new(0.5, 3, 0, 74)
-SavePosBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-SavePosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SavePosBtn.Font = Enum.Font.GothamBold
-SavePosBtn.TextSize = 10
-SavePosBtn.Text = "Save"
-SavePosBtn.Visible = false
-SavePosBtn.Parent = Page2
-local SavePosCorner = Instance.new("UICorner") SavePosCorner.CornerRadius = UDim.new(0,4) SavePosCorner.Parent = SavePosBtn
 
 local FlightToggleBtn = Instance.new("TextButton")
 FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
@@ -383,7 +350,7 @@ end
 
 local LaserButton = Instance.new("TextButton")
 LaserButton.Size = UDim2.new(0, 60, 0, 60)
-LaserButton.Position = getSavedPosition("Laser", DEFAULT_POSITIONS.Laser)
+LaserButton.Position = DEFAULT_POSITIONS.Laser
 LaserButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
 LaserButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 LaserButton.Font = Enum.Font.GothamBold
@@ -395,7 +362,7 @@ local LaserCorner = Instance.new("UICorner") LaserCorner.CornerRadius = UDim.new
 
 local UpthrowButton = Instance.new("TextButton")
 UpthrowButton.Size = UDim2.new(0, 60, 0, 60)
-UpthrowButton.Position = getSavedPosition("Upthrow", DEFAULT_POSITIONS.Upthrow)
+UpthrowButton.Position = DEFAULT_POSITIONS.Upthrow
 UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
 UpthrowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 UpthrowButton.Font = Enum.Font.GothamBold
@@ -407,7 +374,7 @@ local UpthrowCorner = Instance.new("UICorner") UpthrowCorner.CornerRadius = UDim
 
 local OverthrowButton = Instance.new("TextButton")
 OverthrowButton.Size = UDim2.new(0, 60, 0, 60)
-OverthrowButton.Position = getSavedPosition("Overthrow", DEFAULT_POSITIONS.Overthrow)
+OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
 OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
 OverthrowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 OverthrowButton.Font = Enum.Font.GothamBold
@@ -419,7 +386,7 @@ local OverthrowCorner = Instance.new("UICorner") OverthrowCorner.CornerRadius = 
 
 local FlashstrikeButton = Instance.new("TextButton")
 FlashstrikeButton.Size = UDim2.new(0, 60, 0, 60)
-FlashstrikeButton.Position = getSavedPosition("Flashstrike", DEFAULT_POSITIONS.Flashstrike)
+FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
 FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
 FlashstrikeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlashstrikeButton.Font = Enum.Font.GothamBold
@@ -427,7 +394,10 @@ FlashstrikeButton.Text = "Flashstrike"
 FlashstrikeButton.Visible = false
 applyButtonAutoScale(FlashstrikeButton)
 FlashstrikeButton.Parent = FloatingGui
-local FlashstrikeCorner = Instance.new("UICorner") FlashstrikeCorner.CornerRadius = UDim.new(0, 8) FlashstrikeCorner.Parent = FlashstrikeButton-- ==================== 雷射眼邏輯 ====================
+local FlashstrikeCorner = Instance.new("UICorner") FlashstrikeCorner.CornerRadius = UDim.new(0, 8) FlashstrikeCorner.Parent = FlashstrikeButton
+
+-- ==================== 移動鎖定開關（預先聲明） ====================
+local moveUnlocked = false-- ==================== 雷射眼邏輯 ====================
 local laserActive = false
 local laserThread = nil
 
@@ -480,6 +450,7 @@ local function setLaserActive(active)
 end
 
 LaserButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
 	setLaserActive(not laserActive)
 end)
 
@@ -505,6 +476,7 @@ local function findHomelanderThrowDownRemote()
 end
 
 UpthrowButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
 	local remote = findHomelanderThrowDownRemote()
 	if remote then
 		remote:FireServer()
@@ -542,6 +514,7 @@ local function findVecnaOverheadThrowRemote()
 end
 
 OverthrowButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
 	local remote = findVecnaOverheadThrowRemote()
 	if remote then
 		remote:FireServer()
@@ -603,6 +576,7 @@ local function startFlashstrikeCooldown()
 end
 
 FlashstrikeButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
 	if flashstrikeCooldownActive then return end
 	local remote = findTheFlashCwFinalRemote()
 	if remote then
@@ -626,19 +600,15 @@ FlightToggleBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================== 浮動按鈕移動鎖定開關（Move Skills Mode） ====================
-local moveUnlocked = false
-
 local function updateMoveModeButton()
 	if moveUnlocked then
 		MoveModeBtn.Text = "Move Skills Mode: Unlocked"
 		MoveModeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 		ResetPosBtn.Visible = true
-		SavePosBtn.Visible = true
 	else
 		MoveModeBtn.Text = "Move Skills Mode: Locked"
 		MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 		ResetPosBtn.Visible = false
-		SavePosBtn.Visible = false
 	end
 end
 
@@ -649,27 +619,11 @@ end)
 
 updateMoveModeButton()
 
--- Reset 位置
 ResetPosBtn.MouseButton1Click:Connect(function()
 	LaserButton.Position = DEFAULT_POSITIONS.Laser
 	UpthrowButton.Position = DEFAULT_POSITIONS.Upthrow
 	OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
 	FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
-	LocalPlayer:SetAttribute("LaserPos", nil)
-	LocalPlayer:SetAttribute("UpthrowPos", nil)
-	LocalPlayer:SetAttribute("OverthrowPos", nil)
-	LocalPlayer:SetAttribute("FlashstrikePos", nil)
-end)
-
--- 儲存位置
-SavePosBtn.MouseButton1Click:Connect(function()
-	savePosition("Laser", LaserButton.Position)
-	savePosition("Upthrow", UpthrowButton.Position)
-	savePosition("Overthrow", OverthrowButton.Position)
-	savePosition("Flashstrike", FlashstrikeButton.Position)
-	SavePosBtn.Text = "Saved!"
-	task.wait(1)
-	SavePosBtn.Text = "Save"
 end)
 
 -- ==================== 浮動按鈕拖動邏輯 ====================
@@ -767,7 +721,9 @@ UIS.InputChanged:Connect(function(input)
 			flashstrikeStartPos.Y.Offset + delta.Y
 		)
 	end
-end)-- Homelanders Mod 按鈕切換四個浮動按鈕可見性
+end)
+
+-- Homelanders Mod 按鈕切換四個浮動按鈕可見性
 local homelanderModActive = false
 local function updateHomelanderModButton()
 	if homelanderModActive then
