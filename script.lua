@@ -88,15 +88,13 @@ CloseBtn.MouseButton1Click:Connect(function()
 	ScreenGui.Enabled = false
 end)
 
--- ==================== Minimize Icon (胡迪圖) ====================
-local MinimizeIcon = Instance.new("ImageButton")
+-- ==================== Minimize Icon ====================
+local MinimizeIcon = Instance.new("TextButton")
 MinimizeIcon.Name = "MinimizeIcon"
 MinimizeIcon.Size = UDim2.new(0, 58, 0, 58)
 MinimizeIcon.Position = UDim2.new(0, 12, 0.38, 0)
 MinimizeIcon.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-MinimizeIcon.BackgroundTransparency = 0
-MinimizeIcon.Image = "rbxassetid://79733047167022"
-MinimizeIcon.ScaleType = Enum.ScaleType.Fit
+MinimizeIcon.Text = ""
 MinimizeIcon.AutoButtonColor = false
 MinimizeIcon.Visible = false
 MinimizeIcon.ZIndex = 20
@@ -110,6 +108,32 @@ local IconStroke = Instance.new("UIStroke")
 IconStroke.Color = Color3.fromRGB(255, 100, 100)
 IconStroke.Thickness = 2
 IconStroke.Parent = MinimizeIcon
+
+-- YY text (top) - soft gray-white
+local IconTextTop = Instance.new("TextLabel")
+IconTextTop.Size = UDim2.new(1, 0, 0.5, 0)
+IconTextTop.Position = UDim2.new(0, 0, 0, 1)
+IconTextTop.BackgroundTransparency = 1
+IconTextTop.Text = "YY"
+IconTextTop.TextColor3 = Color3.fromRGB(235, 235, 235)
+IconTextTop.Font = Enum.Font.GothamBold
+IconTextTop.TextSize = 18
+IconTextTop.TextXAlignment = Enum.TextXAlignment.Center
+IconTextTop.TextYAlignment = Enum.TextYAlignment.Bottom
+IconTextTop.Parent = MinimizeIcon
+
+-- DS text (bottom) - soft gray-white
+local IconTextBottom = Instance.new("TextLabel")
+IconTextBottom.Size = UDim2.new(1, 0, 0.5, 0)
+IconTextBottom.Position = UDim2.new(0, 0, 0.5, -1)
+IconTextBottom.BackgroundTransparency = 1
+IconTextBottom.Text = "DS"
+IconTextBottom.TextColor3 = Color3.fromRGB(235, 235, 235)
+IconTextBottom.Font = Enum.Font.GothamBold
+IconTextBottom.TextSize = 18
+IconTextBottom.TextXAlignment = Enum.TextXAlignment.Center
+IconTextBottom.TextYAlignment = Enum.TextYAlignment.Top
+IconTextBottom.Parent = MinimizeIcon
 
 -- Minimize / Restore
 MinusBtn.MouseButton1Click:Connect(function()
@@ -222,10 +246,8 @@ GodModeBtn.MouseButton1Click:Connect(function()
 		if not currentRoot then return end
 
 		local originalCFrame = currentRoot.CFrame
-		-- 瞬間傳送到 2000 格高空
 		currentRoot.CFrame = originalCFrame + Vector3.new(0, 2000, 0)
 
-		-- 飛到空中後的初始緩衝
 		task.wait(0.1)
 
 		local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
@@ -243,15 +265,7 @@ GodModeBtn.MouseButton1Click:Connect(function()
 				if remotesFolder then
 					for _, remote in ipairs(remotesFolder:GetChildren()) do
 						if remote:IsA("RemoteEvent") and remote.Name:lower():find("death") then
-							
-							-- 【放技能前】多夾入 0.1 秒
-							task.wait(0.1)
-							
 							remote:FireServer()
-							
-							-- 【放技能後】多夾入 0.1 秒
-							task.wait(0.1)
-							
 							break
 						end
 					end
@@ -259,8 +273,7 @@ GodModeBtn.MouseButton1Click:Connect(function()
 			end
 		end
 
-		-- 最後整體的緩衝與返回原點
-		task.wait(0.7)
+		task.wait(0.9)
 
 		if currentCharacter and currentRoot then
 			currentRoot.CFrame = originalCFrame
