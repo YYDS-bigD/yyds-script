@@ -170,49 +170,168 @@ GodModeBtn.MouseButton1Click:Connect(function()
 	end)
 end)
 
-local LoopContainer1 = Instance.new("Frame")
-LoopContainer1.Size = UDim2.new(1,-10,0,20) LoopContainer1.Position = UDim2.new(0,5,0,49) LoopContainer1.BackgroundColor3 = Color3.fromRGB(20,20,20) LoopContainer1.BorderSizePixel = 0 LoopContainer1.Parent = Page1
-local LoopContainer1Corner = Instance.new("UICorner") LoopContainer1Corner.CornerRadius = UDim.new(0,4) LoopContainer1Corner.Parent = LoopContainer1
+-- ==================== 控制器定义（互斥） ====================
+local simultaneousEnabled = false
+local simultaneousCount = 20  -- 默认20
+local isCustomLoopActive = false
+local loopInterval = 0
 
-local LoopToggle1 = Instance.new("TextButton")
-LoopToggle1.Size = UDim2.new(0,22,0,18) LoopToggle1.Position = UDim2.new(0,5,0,1) LoopToggle1.BackgroundColor3 = Color3.fromRGB(40,40,40)
-LoopToggle1.TextColor3 = Color3.fromRGB(0,255,120) LoopToggle1.Font = Enum.Font.GothamBold LoopToggle1.TextSize = 11 LoopToggle1.Text = "" LoopToggle1.Parent = LoopContainer1
-local Toggle1Corner = Instance.new("UICorner") Toggle1Corner.CornerRadius = UDim.new(0,3) Toggle1Corner.Parent = LoopToggle1
+-- 创建 Simultaneous 控制器
+local SimultaneousContainer = Instance.new("Frame")
+SimultaneousContainer.Size = UDim2.new(1,-10,0,22)
+SimultaneousContainer.Position = UDim2.new(0,5,0,49) -- 原来 Loop 1s 的位置
+SimultaneousContainer.BackgroundColor3 = Color3.fromRGB(20,20,20)
+SimultaneousContainer.BorderSizePixel = 0
+SimultaneousContainer.Parent = Page1
+local SimultaneousCorner = Instance.new("UICorner") SimultaneousCorner.CornerRadius = UDim.new(0,4) SimultaneousCorner.Parent = SimultaneousContainer
 
-local LoopLabel1 = Instance.new("TextLabel")
-LoopLabel1.Size = UDim2.new(1,-34,1,0) LoopLabel1.Position = UDim2.new(0,32,0,0) LoopLabel1.BackgroundTransparency = 1
-LoopLabel1.TextColor3 = Color3.fromRGB(200,200,200) LoopLabel1.Font = Enum.Font.Gotham LoopLabel1.TextSize = 10 LoopLabel1.Text = "Loop 1s" LoopLabel1.TextXAlignment = Enum.TextXAlignment.Left LoopLabel1.Parent = LoopContainer1
+local SimultaneousToggle = Instance.new("TextButton")
+SimultaneousToggle.Size = UDim2.new(0,18,0,18) SimultaneousToggle.Position = UDim2.new(0,5,0,2) SimultaneousToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+SimultaneousToggle.TextColor3 = Color3.fromRGB(0,255,120) SimultaneousToggle.Font = Enum.Font.GothamBold SimultaneousToggle.TextSize = 11 SimultaneousToggle.Text = "" SimultaneousToggle.Parent = SimultaneousContainer
+local SimultaneousToggleCorner = Instance.new("UICorner") SimultaneousToggleCorner.CornerRadius = UDim.new(0,3) SimultaneousToggleCorner.Parent = SimultaneousToggle
 
+local SimultaneousLabel = Instance.new("TextLabel")
+SimultaneousLabel.Size = UDim2.new(0,40,1,0) SimultaneousLabel.Position = UDim2.new(0,28,0,0) SimultaneousLabel.BackgroundTransparency = 1
+SimultaneousLabel.TextColor3 = Color3.fromRGB(200,200,200) SimultaneousLabel.Font = Enum.Font.Gotham SimultaneousLabel.TextSize = 9 SimultaneousLabel.Text = "Simul." SimultaneousLabel.TextXAlignment = Enum.TextXAlignment.Left SimultaneousLabel.Parent = SimultaneousContainer
+
+local SimultaneousSubBtn = Instance.new("TextButton")
+SimultaneousSubBtn.Size = UDim2.new(0,16,0,16) SimultaneousSubBtn.Position = UDim2.new(0,72,0,3) SimultaneousSubBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+SimultaneousSubBtn.TextColor3 = Color3.fromRGB(220,220,220) SimultaneousSubBtn.Font = Enum.Font.GothamBold SimultaneousSubBtn.TextSize = 12 SimultaneousSubBtn.Text = "-" SimultaneousSubBtn.Parent = SimultaneousContainer
+local SimultaneousSubCorner = Instance.new("UICorner") SimultaneousSubCorner.CornerRadius = UDim.new(0,3) SimultaneousSubCorner.Parent = SimultaneousSubBtn
+
+local SimultaneousInput = Instance.new("TextBox")
+SimultaneousInput.Size = UDim2.new(0,26,0,16) SimultaneousInput.Position = UDim2.new(0,90,0,3) SimultaneousInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
+SimultaneousInput.TextColor3 = Color3.fromRGB(240,240,240) SimultaneousInput.Font = Enum.Font.Gotham SimultaneousInput.TextSize = 10 SimultaneousInput.Text = "20" SimultaneousInput.ClearTextOnFocus = false SimultaneousInput.Parent = SimultaneousContainer
+local SimultaneousInputCorner = Instance.new("UICorner") SimultaneousInputCorner.CornerRadius = UDim.new(0,3) SimultaneousInputCorner.Parent = SimultaneousInput
+
+local SimultaneousAddBtn = Instance.new("TextButton")
+SimultaneousAddBtn.Size = UDim2.new(0,16,0,16) SimultaneousAddBtn.Position = UDim2.new(0,118,0,3) SimultaneousAddBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+SimultaneousAddBtn.TextColor3 = Color3.fromRGB(220,220,220) SimultaneousAddBtn.Font = Enum.Font.GothamBold SimultaneousAddBtn.TextSize = 12 SimultaneousAddBtn.Text = "+" SimultaneousAddBtn.Parent = SimultaneousContainer
+local SimultaneousAddCorner = Instance.new("UICorner") SimultaneousAddCorner.CornerRadius = UDim.new(0,3) SimultaneousAddCorner.Parent = SimultaneousAddBtn
+
+-- 创建 Custom Loop 控制器
 local CustomLoopContainer = Instance.new("Frame")
-CustomLoopContainer.Size = UDim2.new(1,-10,0,20) CustomLoopContainer.Position = UDim2.new(0,5,0,71) CustomLoopContainer.BackgroundColor3 = Color3.fromRGB(20,20,20) CustomLoopContainer.BorderSizePixel = 0 CustomLoopContainer.Parent = Page1
+CustomLoopContainer.Size = UDim2.new(1,-10,0,22)
+CustomLoopContainer.Position = UDim2.new(0,5,0,73)
+CustomLoopContainer.BackgroundColor3 = Color3.fromRGB(20,20,20)
+CustomLoopContainer.BorderSizePixel = 0
+CustomLoopContainer.Parent = Page1
 local CustomLoopContainerCorner = Instance.new("UICorner") CustomLoopContainerCorner.CornerRadius = UDim.new(0,4) CustomLoopContainerCorner.Parent = CustomLoopContainer
 
 local CustomToggle = Instance.new("TextButton")
-CustomToggle.Size = UDim2.new(0,22,0,18) CustomToggle.Position = UDim2.new(0,5,0,1) CustomToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+CustomToggle.Size = UDim2.new(0,18,0,18) CustomToggle.Position = UDim2.new(0,5,0,2) CustomToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
 CustomToggle.TextColor3 = Color3.fromRGB(0,255,120) CustomToggle.Font = Enum.Font.GothamBold CustomToggle.TextSize = 11 CustomToggle.Text = "" CustomToggle.Parent = CustomLoopContainer
 local CustomToggleCorner = Instance.new("UICorner") CustomToggleCorner.CornerRadius = UDim.new(0,3) CustomToggleCorner.Parent = CustomToggle
 
+local CustomLabel = Instance.new("TextLabel")
+CustomLabel.Size = UDim2.new(0,40,1,0) CustomLabel.Position = UDim2.new(0,28,0,0) CustomLabel.BackgroundTransparency = 1
+CustomLabel.TextColor3 = Color3.fromRGB(200,200,200) CustomLabel.Font = Enum.Font.Gotham CustomLabel.TextSize = 9 CustomLabel.Text = "Loop" CustomLabel.TextXAlignment = Enum.TextXAlignment.Left CustomLabel.Parent = CustomLoopContainer
+
 local SubBtn = Instance.new("TextButton")
-SubBtn.Size = UDim2.new(0,20,0,16) SubBtn.Position = UDim2.new(0,32,0,2) SubBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+SubBtn.Size = UDim2.new(0,16,0,16) SubBtn.Position = UDim2.new(0,72,0,3) SubBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 SubBtn.TextColor3 = Color3.fromRGB(220,220,220) SubBtn.Font = Enum.Font.GothamBold SubBtn.TextSize = 12 SubBtn.Text = "-" SubBtn.Parent = CustomLoopContainer
 local SubCorner = Instance.new("UICorner") SubCorner.CornerRadius = UDim.new(0,3) SubCorner.Parent = SubBtn
 
 local CustomInput = Instance.new("TextBox")
-CustomInput.Size = UDim2.new(0,40,0,16) CustomInput.Position = UDim2.new(0,52,0,2) CustomInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
+CustomInput.Size = UDim2.new(0,26,0,16) CustomInput.Position = UDim2.new(0,90,0,3) CustomInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
 CustomInput.TextColor3 = Color3.fromRGB(240,240,240) CustomInput.Font = Enum.Font.Gotham CustomInput.TextSize = 10 CustomInput.Text = "0.05" CustomInput.ClearTextOnFocus = false CustomInput.Parent = CustomLoopContainer
 local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0,3) InputCorner.Parent = CustomInput
 
 local AddBtn = Instance.new("TextButton")
-AddBtn.Size = UDim2.new(0,20,0,16) AddBtn.Position = UDim2.new(0,96,0,2) AddBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+AddBtn.Size = UDim2.new(0,16,0,16) AddBtn.Position = UDim2.new(0,118,0,3) AddBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 AddBtn.TextColor3 = Color3.fromRGB(220,220,220) AddBtn.Font = Enum.Font.GothamBold AddBtn.TextSize = 12 AddBtn.Text = "+" AddBtn.Parent = CustomLoopContainer
 local AddCorner = Instance.new("UICorner") AddCorner.CornerRadius = UDim.new(0,3) AddCorner.Parent = AddBtn
 
-local CustomLabel = Instance.new("TextLabel")
-CustomLabel.Size = UDim2.new(1,-120,1,0) CustomLabel.Position = UDim2.new(0,120,0,0) CustomLabel.BackgroundTransparency = 1
-CustomLabel.TextColor3 = Color3.fromRGB(200,200,200) CustomLabel.Font = Enum.Font.Gotham CustomLabel.TextSize = 8 CustomLabel.Text = "Loop" CustomLabel.TextXAlignment = Enum.TextXAlignment.Left CustomLabel.Parent = CustomLoopContainer
+-- 更新UI函数
+local function updateControllerUI()
+	SimultaneousToggle.BackgroundColor3 = simultaneousEnabled and Color3.fromRGB(80,50,120) or Color3.fromRGB(40,40,40)
+	SimultaneousToggle.Text = simultaneousEnabled and "✓" or ""
+	CustomToggle.BackgroundColor3 = isCustomLoopActive and Color3.fromRGB(80,50,120) or Color3.fromRGB(40,40,40)
+	CustomToggle.Text = isCustomLoopActive and "✓" or ""
+end
+
+-- Simultaneous 切换（互斥）
+SimultaneousToggle.MouseButton1Click:Connect(function()
+	if simultaneousEnabled then
+		simultaneousEnabled = false
+	else
+		simultaneousEnabled = true
+		if isCustomLoopActive then
+			isCustomLoopActive = false
+			loopInterval = 0
+		end
+	end
+	updateControllerUI()
+end)
+
+-- Custom Loop 切换（互斥）
+CustomToggle.MouseButton1Click:Connect(function()
+	if isCustomLoopActive then
+		isCustomLoopActive = false
+		loopInterval = 0
+	else
+		isCustomLoopActive = true
+		if simultaneousEnabled then
+			simultaneousEnabled = false
+		end
+		local val = tonumber(CustomInput.Text) or 0.05
+		loopInterval = math.max(0.001, val)
+	end
+	updateControllerUI()
+end)
+
+-- 加减按钮和输入框事件
+SimultaneousSubBtn.MouseButton1Click:Connect(function()
+	local val = tonumber(SimultaneousInput.Text) or simultaneousCount
+	val = math.max(1, val - 1)
+	simultaneousCount = val
+	SimultaneousInput.Text = tostring(val)
+end)
+SimultaneousAddBtn.MouseButton1Click:Connect(function()
+	local val = tonumber(SimultaneousInput.Text) or simultaneousCount
+	val = val + 1
+	simultaneousCount = val
+	SimultaneousInput.Text = tostring(val)
+end)
+SimultaneousInput:GetPropertyChangedSignal("Text"):Connect(function()
+	local val = tonumber(SimultaneousInput.Text)
+	if val and val > 0 then
+		simultaneousCount = val
+	else
+		simultaneousCount = 20
+		SimultaneousInput.Text = "20"
+	end
+end)
+
+SubBtn.MouseButton1Click:Connect(function()
+	local val = tonumber(CustomInput.Text) or 0.05
+	val = math.max(0.001, val - 0.01)
+	CustomInput.Text = string.format("%.3f", val):gsub("%.?0+$", "")
+	if isCustomLoopActive then loopInterval = tonumber(CustomInput.Text) or 0.05 end
+end)
+AddBtn.MouseButton1Click:Connect(function()
+	local val = tonumber(CustomInput.Text) or 0.05
+	val = val + 0.01
+	CustomInput.Text = string.format("%.3f", val):gsub("%.?0+$", "")
+	if isCustomLoopActive then loopInterval = tonumber(CustomInput.Text) or 0.05 end
+end)
+CustomInput:GetPropertyChangedSignal("Text"):Connect(function()
+	if isCustomLoopActive then
+		local val = tonumber(CustomInput.Text)
+		if val and val > 0 then loopInterval = val end
+	end
+end)
+
+-- 初始更新UI
+updateControllerUI()
 
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1,-4,1,-95) Scroll.Position = UDim2.new(0,2,0,93) Scroll.CanvasSize = UDim2.new(0,0,0,0) Scroll.ScrollBarThickness = 4 Scroll.BackgroundTransparency = 1 Scroll.Parent = Page1
+Scroll.Size = UDim2.new(1,-4,1,-97)
+Scroll.Position = UDim2.new(0,2,0,95)
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
+Scroll.ScrollBarThickness = 4
+Scroll.BackgroundTransparency = 1
+Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
 -- ==================== 第二頁 Extras ====================
@@ -503,7 +622,18 @@ UpthrowButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	local remote = findHomelanderThrowDownRemote()
 	if remote then
-		remote:FireServer()
+		if simultaneousEnabled then
+			for i = 1, simultaneousCount do remote:FireServer() end
+		elseif loopInterval > 0 then
+			task.spawn(function()
+				while loopInterval > 0 do
+					remote:FireServer()
+					task.wait(loopInterval)
+				end
+			end)
+		else
+			remote:FireServer()
+		end
 		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 		task.wait(0.2)
 		UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
@@ -541,7 +671,18 @@ OverthrowButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	local remote = findVecnaOverheadThrowRemote()
 	if remote then
-		remote:FireServer()
+		if simultaneousEnabled then
+			for i = 1, simultaneousCount do remote:FireServer() end
+		elseif loopInterval > 0 then
+			task.spawn(function()
+				while loopInterval > 0 do
+					remote:FireServer()
+					task.wait(loopInterval)
+				end
+			end)
+		else
+			remote:FireServer()
+		end
 		OverthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 		task.wait(0.2)
 		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
@@ -604,7 +745,18 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 	if flashstrikeCooldownActive then return end
 	local remote = findTheFlashCwFinalRemote()
 	if remote then
-		remote:FireServer()
+		if simultaneousEnabled then
+			for i = 1, simultaneousCount do remote:FireServer() end
+		elseif loopInterval > 0 then
+			task.spawn(function()
+				while loopInterval > 0 do
+					remote:FireServer()
+					task.wait(loopInterval)
+				end
+			end)
+		else
+			remote:FireServer()
+		end
 		startFlashstrikeCooldown()
 	else
 		FlashstrikeButton.Text = "No Remote"
@@ -615,7 +767,7 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ==================== Kick 邏輯（改名 One punch，先破防後等0.5秒再40次Kick） ====================
+-- Kick 邏輯
 local function findZodiacKickRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -669,12 +821,20 @@ KickButton.MouseButton1Click:Connect(function()
 	-- 等待 0.5 秒
 	task.wait(0.5)
 	
-	-- 再快速連續執行 40 次 Kick（無等待）
+	-- 再執行 Kick（根據開關決定同時或循環）
 	if kickRemote then
-		for i = 1, 40 do
-			kickRemote:FireServer()
+		if simultaneousEnabled then
+			for i = 1, simultaneousCount do kickRemote:FireServer() end
+		elseif loopInterval > 0 then
+			task.spawn(function()
+				while loopInterval > 0 do
+					kickRemote:FireServer()
+					task.wait(loopInterval)
+				end
+			end)
+		else
+			for i = 1, 40 do kickRemote:FireServer() end
 		end
-		-- 視覺回饋
 		KickButton.BackgroundColor3 = Color3.fromRGB(200, 50, 200)
 		task.wait(0.1)
 		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
@@ -687,7 +847,7 @@ KickButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ==================== Homelander Fly 執行邏輯 ====================
+-- Homelander Fly
 FlightToggleBtn.MouseButton1Click:Connect(function()
 	if flightTask then return end
 	flightTask = task.spawn(function()
@@ -697,7 +857,7 @@ FlightToggleBtn.MouseButton1Click:Connect(function()
 	FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 end)
 
--- ==================== 浮動按鈕移動鎖定開關（Move Skills Mode） ====================
+-- Move Skills Mode
 local function updateMoveModeButton()
 	if moveUnlocked then
 		MoveModeBtn.Text = "Move Skills Mode: Unlocked"
@@ -725,7 +885,7 @@ ResetPosBtn.MouseButton1Click:Connect(function()
 	KickButton.Position = DEFAULT_POSITIONS.Kick
 end)
 
--- ==================== 浮動按鈕拖動邏輯 ====================
+-- 拖動邏輯（保留原樣）
 local laserDragging = false
 local laserDragStart, laserStartPos
 
@@ -844,7 +1004,7 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Homelanders Mod 按鈕切換浮動按鈕可見性（包含 Kick）
+-- Homelanders Mod
 local homelanderModActive = false
 local function updateHomelanderModButton()
 	if homelanderModActive then
@@ -868,7 +1028,7 @@ end)
 
 updateHomelanderModButton()
 
--- ==================== UI Scale 滑條邏輯 ====================
+-- UI Scale 滑條邏輯
 local minScale = 0.5 local maxScale = 1.5 local currentScale = uiScale.Scale
 local function UpdateFromScale(scale)
 	currentScale = math.clamp(scale, minScale, maxScale) uiScale.Scale = currentScale
@@ -909,10 +1069,11 @@ SliderThumb.InputBegan:Connect(StartSliderDrag)
 UIS.InputEnded:Connect(StopSliderDrag)
 UIS.InputChanged:Connect(DragSlider)
 
--- ==================== Cancel Script 功能 ====================
+-- Cancel Script
 local function CancelScript()
 	loopInterval = 0
 	isCustomLoopActive = false
+	simultaneousEnabled = false
 	if currentLoopThread then
 		task.cancel(currentLoopThread)
 		currentLoopThread = nil
@@ -929,7 +1090,7 @@ end
 
 CancelScriptBtn.MouseButton1Click:Connect(CancelScript)
 
--- ==================== 主菜單拖動與鎖定 ====================
+-- 主菜單拖動與鎖定
 local isWindowLocked = true
 local function UpdateLockVisuals()
 	if isWindowLocked then LockButtonTop.Text = "🔒" LockButtonTop.TextColor3 = Color3.fromRGB(255,80,80)
@@ -956,30 +1117,10 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- ==================== Loop 邏輯 ====================
-local loopInterval = 0 local isCustomLoopActive = false local currentLoopThread = nil
+-- Loop 邏輯
+local currentLoopThread = nil
 
-LoopToggle1.MouseButton1Click:Connect(function()
-	if loopInterval == 1 and not isCustomLoopActive then loopInterval = 0 LoopToggle1.Text = ""
-	else loopInterval = 1 isCustomLoopActive = false LoopToggle1.Text = "✓" CustomToggle.Text = "" end
-end)
-CustomToggle.MouseButton1Click:Connect(function()
-	if isCustomLoopActive then isCustomLoopActive = false loopInterval = 0 CustomToggle.Text = ""
-	else isCustomLoopActive = true local val = tonumber(CustomInput.Text) or 0.05 loopInterval = math.max(0.001, val) CustomToggle.Text = "✓" LoopToggle1.Text = "" end
-end)
-SubBtn.MouseButton1Click:Connect(function()
-	local val = tonumber(CustomInput.Text) or 0.05 val = math.max(0.001, val - 0.01) CustomInput.Text = string.format("%.3f", val):gsub("%.?0+$", "")
-	if isCustomLoopActive then loopInterval = tonumber(CustomInput.Text) or 0.05 end
-end)
-AddBtn.MouseButton1Click:Connect(function()
-	local val = tonumber(CustomInput.Text) or 0.05 val = val + 0.01 CustomInput.Text = string.format("%.3f", val):gsub("%.?0+$", "")
-	if isCustomLoopActive then loopInterval = tonumber(CustomInput.Text) or 0.05 end
-end)
-CustomInput:GetPropertyChangedSignal("Text"):Connect(function()
-	if isCustomLoopActive then local val = tonumber(CustomInput.Text) if val and val > 0 then loopInterval = val end end
-end)
-
--- ==================== 刷新技能列表 ====================
+-- 刷新技能列表
 local function Refresh()
 	for _, child in ipairs(Scroll:GetChildren()) do
 		if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
@@ -1013,10 +1154,19 @@ local function Refresh()
 				if #matchedAbilities == 0 then MakeButton("[NO REMOTES] " .. charName, function() end)
 				else for _, data in ipairs(matchedAbilities) do
 					MakeButton("⚡ " .. data.name, function()
-						if loopInterval > 0 then
+						if simultaneousEnabled then
+							for i = 1, simultaneousCount do
+								data.remote:FireServer()
+							end
+						elseif loopInterval > 0 then
 							if currentLoopThread then task.cancel(currentLoopThread) currentLoopThread = nil end
 							local interval = loopInterval
-							currentLoopThread = task.spawn(function() while loopInterval > 0 do data.remote:FireServer() task.wait(interval) end end)
+							currentLoopThread = task.spawn(function()
+								while loopInterval > 0 do
+									data.remote:FireServer()
+									task.wait(interval)
+								end
+							end)
 						else
 							if currentLoopThread then task.cancel(currentLoopThread) currentLoopThread = nil end
 							data.remote:FireServer()
