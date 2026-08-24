@@ -361,7 +361,7 @@ FinisherButton.BackgroundColor3 = Color3.fromRGB(30, 100, 60)
 FinisherButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FinisherButton.Font = Enum.Font.GothamBold
 FinisherButton.TextSize = 10
-FinisherButton.Text = "Auto Finisher ON"  -- 默认开启
+FinisherButton.Text = "Auto Finisher ON"
 FinisherButton.TextScaled = true
 FinisherButton.Visible = false
 FinisherButton.Parent = Page2
@@ -370,20 +370,18 @@ local FinisherCorner = Instance.new("UICorner") FinisherCorner.CornerRadius = UD
 -- 修改：将原 "Please use Homelander" 替换为雷射眼适配说明
 local LaserCompatibilityLabel = Instance.new("TextLabel")
 LaserCompatibilityLabel.Size = UDim2.new(1, -10, 0, 14)
-LaserCompatibilityLabel.Position = UDim2.new(0, 5, 0, 36)  -- 原标签位置
+LaserCompatibilityLabel.Position = UDim2.new(0, 5, 0, 36)
 LaserCompatibilityLabel.BackgroundTransparency = 1
-LaserCompatibilityLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 白色
+LaserCompatibilityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 LaserCompatibilityLabel.Font = Enum.Font.Gotham
-LaserCompatibilityLabel.TextSize = 6  -- 小字号
+LaserCompatibilityLabel.TextSize = 6
 LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
 LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
 LaserCompatibilityLabel.Parent = Page2
 
--- 删除原有的 HomelanderHintLabel 和 HomelanderExtraHint，不再需要
-
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 62) -- 保持原位置
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 62)
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
@@ -974,7 +972,7 @@ ComboButton.MouseButton1Click:Connect(function()
 	if batMobile then batMobile:FireServer() end
 	
 	task.spawn(function()
-		task.wait(2.8)
+		task.wait(2.7) -- 修改：2.8 改为 2.7
 		local kickRemote = findZodiacKickRemote()
 		local earClapRemote = findHomelanderEarClapRemote()
 		
