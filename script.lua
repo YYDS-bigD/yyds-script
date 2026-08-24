@@ -367,31 +367,23 @@ FinisherButton.Visible = false
 FinisherButton.Parent = Page2
 local FinisherCorner = Instance.new("UICorner") FinisherCorner.CornerRadius = UDim.new(0,4) FinisherCorner.Parent = FinisherButton
 
-local HomelanderHintLabel = Instance.new("TextLabel")
-HomelanderHintLabel.Size = UDim2.new(1, -10, 0, 14)
-HomelanderHintLabel.Position = UDim2.new(0, 5, 0, 36)
-HomelanderHintLabel.BackgroundTransparency = 1
-HomelanderHintLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-HomelanderHintLabel.Font = Enum.Font.Gotham
-HomelanderHintLabel.TextSize = 9
-HomelanderHintLabel.Text = "Please use Homelander"
-HomelanderHintLabel.TextXAlignment = Enum.TextXAlignment.Left
-HomelanderHintLabel.Parent = Page2
+-- 修改：将原 "Please use Homelander" 替换为雷射眼适配说明
+local LaserCompatibilityLabel = Instance.new("TextLabel")
+LaserCompatibilityLabel.Size = UDim2.new(1, -10, 0, 14)
+LaserCompatibilityLabel.Position = UDim2.new(0, 5, 0, 36)  -- 原标签位置
+LaserCompatibilityLabel.BackgroundTransparency = 1
+LaserCompatibilityLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 白色
+LaserCompatibilityLabel.Font = Enum.Font.Gotham
+LaserCompatibilityLabel.TextSize = 6  -- 小字号
+LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
+LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
+LaserCompatibilityLabel.Parent = Page2
 
-local HomelanderExtraHint = Instance.new("TextLabel")
-HomelanderExtraHint.Size = UDim2.new(1, -10, 0, 10)
-HomelanderExtraHint.Position = UDim2.new(0, 5, 0, 50)
-HomelanderExtraHint.BackgroundTransparency = 1
-HomelanderExtraHint.TextColor3 = Color3.fromRGB(140, 140, 140)
-HomelanderExtraHint.Font = Enum.Font.Gotham
-HomelanderExtraHint.TextSize = 6
-HomelanderExtraHint.Text = "(Donut & Laser: Homelander only)"
-HomelanderExtraHint.TextXAlignment = Enum.TextXAlignment.Left
-HomelanderExtraHint.Parent = Page2
+-- 删除原有的 HomelanderHintLabel 和 HomelanderExtraHint，不再需要
 
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 62)
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 62) -- 保持原位置
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
@@ -911,7 +903,7 @@ KickButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Combo 邏輯
+-- Combo 邏輯（Donut）
 local function findTheBatmanMoveOneRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -983,10 +975,18 @@ ComboButton.MouseButton1Click:Connect(function()
 	
 	task.spawn(function()
 		task.wait(2.8)
-		local earClap = findHomelanderEarClapRemote()
-		if earClap then
-			for i = 1, 40 do
-				earClap:FireServer()
+		local kickRemote = findZodiacKickRemote()
+		local earClapRemote = findHomelanderEarClapRemote()
+		
+		-- 同时执行：39次Kick + 2次EarClap
+		if kickRemote then
+			for i = 1, 39 do
+				kickRemote:FireServer()
+			end
+		end
+		if earClapRemote then
+			for i = 1, 2 do
+				earClapRemote:FireServer()
 			end
 		end
 	end)
