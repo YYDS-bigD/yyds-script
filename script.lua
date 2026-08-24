@@ -33,7 +33,7 @@ local finisherLoopThread = nil       -- 循环线程
 local finisherActive = false         -- 循环是否正在运行
 
 local DEFAULT_POSITIONS = {
-	Laser = UDim2.new(1, -240, 0.5, -30),
+	Laser = UDim2.new(1, -240, 0.5, -100), -- 与 Flashstrike 保持 10 像素间隙
 	Upthrow = UDim2.new(1, -310, 0.5, -30),
 	Overthrow = UDim2.new(1, -310, 0.5, 40),
 	Flashstrike = UDim2.new(1, -310, 0.5, -100), -- 下移10，与Upthrow间距70
@@ -181,7 +181,7 @@ end)
 
 -- ==================== 控制器定义（互斥） ====================
 local simultaneousEnabled = false
-local simultaneousCount = 20  -- 默认20
+local simultaneousCount = 20
 local isCustomLoopActive = false
 local loopInterval = 0
 
@@ -289,7 +289,6 @@ CustomToggle.MouseButton1Click:Connect(function()
 	updateControllerUI()
 end)
 
--- 加减按钮和输入框事件
 SimultaneousSubBtn.MouseButton1Click:Connect(function()
 	local val = tonumber(SimultaneousInput.Text) or simultaneousCount
 	val = math.max(1, val - 1)
@@ -331,7 +330,6 @@ CustomInput:GetPropertyChangedSignal("Text"):Connect(function()
 	end
 end)
 
--- 初始更新UI
 updateControllerUI()
 
 local Scroll = Instance.new("ScrollingFrame")
@@ -344,7 +342,6 @@ Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
 -- ==================== 第二頁 Extras ====================
--- Homelander Mod 按钮（可缩小）
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -357,7 +354,6 @@ HomelanderModBtn.TextScaled = true
 HomelanderModBtn.Parent = Page2
 local HomelanderModCorner = Instance.new("UICorner") HomelanderModCorner.CornerRadius = UDim.new(0,4) HomelanderModCorner.Parent = HomelanderModBtn
 
--- Finisher 按钮（默认隐藏，激活 Homelanders Mod 后显示在右侧）
 local FinisherButton = Instance.new("TextButton")
 FinisherButton.Size = UDim2.new(0.5, -8, 0, 24)
 FinisherButton.Position = UDim2.new(0.5, 2, 0, 10)
@@ -365,7 +361,7 @@ FinisherButton.BackgroundColor3 = Color3.fromRGB(30, 100, 60)
 FinisherButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FinisherButton.Font = Enum.Font.GothamBold
 FinisherButton.TextSize = 10
-FinisherButton.Text = "Finisher ON"
+FinisherButton.Text = "Auto Finisher ON"  -- 默认开启
 FinisherButton.TextScaled = true
 FinisherButton.Visible = false
 FinisherButton.Parent = Page2
@@ -382,7 +378,6 @@ HomelanderHintLabel.Text = "Please use Homelander"
 HomelanderHintLabel.TextXAlignment = Enum.TextXAlignment.Left
 HomelanderHintLabel.Parent = Page2
 
--- 新增括号说明标签
 local HomelanderExtraHint = Instance.new("TextLabel")
 HomelanderExtraHint.Size = UDim2.new(1, -10, 0, 10)
 HomelanderExtraHint.Position = UDim2.new(0, 5, 0, 50)
@@ -394,7 +389,6 @@ HomelanderExtraHint.Text = "(Donut & Laser: Homelander only)"
 HomelanderExtraHint.TextXAlignment = Enum.TextXAlignment.Left
 HomelanderExtraHint.Parent = Page2
 
--- 下方按钮位置
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
 MoveModeBtn.Position = UDim2.new(0, 5, 0, 62)
@@ -513,8 +507,9 @@ local function applyButtonAutoScale(button)
 	button.TextSize = 14
 end
 
+-- 雷射眼按钮：高度减半（30），位置在 Flashstrike 右边，间隔 10
 local LaserButton = Instance.new("TextButton")
-LaserButton.Size = UDim2.new(0, 60, 0, 60)
+LaserButton.Size = UDim2.new(0, 60, 0, 30)
 LaserButton.Position = DEFAULT_POSITIONS.Laser
 LaserButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
 LaserButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -561,7 +556,6 @@ applyButtonAutoScale(FlashstrikeButton)
 FlashstrikeButton.Parent = FloatingGui
 local FlashstrikeCorner = Instance.new("UICorner") FlashstrikeCorner.CornerRadius = UDim.new(0, 8) FlashstrikeCorner.Parent = FlashstrikeButton
 
--- One punch 按钮
 local KickButton = Instance.new("TextButton")
 KickButton.Size = UDim2.new(0, 60, 0, 60)
 KickButton.Position = DEFAULT_POSITIONS.Kick
@@ -574,7 +568,6 @@ applyButtonAutoScale(KickButton)
 KickButton.Parent = FloatingGui
 local KickCorner = Instance.new("UICorner") KickCorner.CornerRadius = UDim.new(0, 8) KickCorner.Parent = KickButton
 
--- Combo 按钮
 local ComboButton = Instance.new("TextButton")
 ComboButton.Size = UDim2.new(0, 60, 0, 60)
 ComboButton.Position = DEFAULT_POSITIONS.Combo
@@ -817,7 +810,7 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ==================== Kick 邏輯（One punch + WebBlossom 循环，固定40次Kick） ====================
+-- Kick 邏輯
 local function findZodiacKickRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -918,7 +911,7 @@ KickButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ==================== Combo 邏輯（Donut） ====================
+-- Combo 邏輯
 local function findTheBatmanMoveOneRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -1233,7 +1226,7 @@ local function updateHomelanderModButton()
 		HomelanderModBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 		HomelanderModBtn.Size = UDim2.new(0.5, -8, 0, 24)
 		FinisherButton.Visible = true
-		FinisherButton.Text = finisherEnabled and "Finisher ON" or "Finisher OFF"
+		FinisherButton.Text = finisherEnabled and "Auto Finisher ON" or "Auto Finisher OFF"
 		FinisherButton.BackgroundColor3 = finisherEnabled and Color3.fromRGB(30, 100, 60) or Color3.fromRGB(100, 40, 40)
 		if finisherEnabled then
 			startFinisherLoop()
@@ -1262,7 +1255,7 @@ end)
 
 FinisherButton.MouseButton1Click:Connect(function()
 	finisherEnabled = not finisherEnabled
-	FinisherButton.Text = finisherEnabled and "Finisher ON" or "Finisher OFF"
+	FinisherButton.Text = finisherEnabled and "Auto Finisher ON" or "Auto Finisher OFF"
 	FinisherButton.BackgroundColor3 = finisherEnabled and Color3.fromRGB(30, 100, 60) or Color3.fromRGB(100, 40, 40)
 	if finisherEnabled then
 		if homelanderModActive then
