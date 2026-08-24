@@ -18,18 +18,27 @@ local oldFinalGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoH
 if oldFinalGui then oldFinalGui:Destroy() end
 local oldKickGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubKickButton")
 if oldKickGui then oldKickGui:Destroy() end
+local oldComboGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubComboButton")
+if oldComboGui then oldComboGui:Destroy() end
 
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Root = Character:WaitForChild("HumanoidRootPart")
 
 local flightTask = nil
+local kickActive = false -- 用于控制 WebBlossom 循环
+
+-- 新增 Finisher 相关变量
+local finisherEnabled = true          -- 默认开启
+local finisherLoopThread = nil       -- 循环线程
+local finisherActive = false         -- 循环是否正在运行
 
 local DEFAULT_POSITIONS = {
 	Laser = UDim2.new(1, -240, 0.5, -30),
 	Upthrow = UDim2.new(1, -310, 0.5, -30),
 	Overthrow = UDim2.new(1, -310, 0.5, 40),
-	Flashstrike = UDim2.new(1, -310, 0.5, -110),
-	Kick = UDim2.new(1, -250, 0.5, -170) -- Flashstrike 右上角
+	Flashstrike = UDim2.new(1, -310, 0.5, -100), -- 下移10，与Upthrow间距70
+	Kick = UDim2.new(1, -240, 0.5, -170),      -- 跟随Donut右边，X = -240
+	Combo = UDim2.new(1, -310, 0.5, -170)      -- 与Flashstrike垂直对齐
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -179,7 +188,7 @@ local loopInterval = 0
 -- 创建 Simultaneous 控制器
 local SimultaneousContainer = Instance.new("Frame")
 SimultaneousContainer.Size = UDim2.new(1,-10,0,22)
-SimultaneousContainer.Position = UDim2.new(0,5,0,49) -- 原来 Loop 1s 的位置
+SimultaneousContainer.Position = UDim2.new(0,5,0,49)
 SimultaneousContainer.BackgroundColor3 = Color3.fromRGB(20,20,20)
 SimultaneousContainer.BorderSizePixel = 0
 SimultaneousContainer.Parent = Page1
@@ -335,6 +344,7 @@ Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
 -- ==================== 第二頁 Extras ====================
+-- Homelander Mod 按钮（可缩小）
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -347,6 +357,20 @@ HomelanderModBtn.TextScaled = true
 HomelanderModBtn.Parent = Page2
 local HomelanderModCorner = Instance.new("UICorner") HomelanderModCorner.CornerRadius = UDim.new(0,4) HomelanderModCorner.Parent = HomelanderModBtn
 
+-- Finisher 按钮（默认隐藏，激活 Homelanders Mod 后显示在右侧）
+local FinisherButton = Instance.new("TextButton")
+FinisherButton.Size = UDim2.new(0.5, -8, 0, 24)
+FinisherButton.Position = UDim2.new(0.5, 2, 0, 10)
+FinisherButton.BackgroundColor3 = Color3.fromRGB(30, 100, 60)
+FinisherButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FinisherButton.Font = Enum.Font.GothamBold
+FinisherButton.TextSize = 10
+FinisherButton.Text = "Finisher ON"
+FinisherButton.TextScaled = true
+FinisherButton.Visible = false
+FinisherButton.Parent = Page2
+local FinisherCorner = Instance.new("UICorner") FinisherCorner.CornerRadius = UDim.new(0,4) FinisherCorner.Parent = FinisherButton
+
 local HomelanderHintLabel = Instance.new("TextLabel")
 HomelanderHintLabel.Size = UDim2.new(1, -10, 0, 14)
 HomelanderHintLabel.Position = UDim2.new(0, 5, 0, 36)
@@ -358,9 +382,22 @@ HomelanderHintLabel.Text = "Please use Homelander"
 HomelanderHintLabel.TextXAlignment = Enum.TextXAlignment.Left
 HomelanderHintLabel.Parent = Page2
 
+-- 新增括号说明标签
+local HomelanderExtraHint = Instance.new("TextLabel")
+HomelanderExtraHint.Size = UDim2.new(1, -10, 0, 10)
+HomelanderExtraHint.Position = UDim2.new(0, 5, 0, 50)
+HomelanderExtraHint.BackgroundTransparency = 1
+HomelanderExtraHint.TextColor3 = Color3.fromRGB(140, 140, 140)
+HomelanderExtraHint.Font = Enum.Font.Gotham
+HomelanderExtraHint.TextSize = 6
+HomelanderExtraHint.Text = "(Donut & Laser: Homelander only)"
+HomelanderExtraHint.TextXAlignment = Enum.TextXAlignment.Left
+HomelanderExtraHint.Parent = Page2
+
+-- 下方按钮位置
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 52)
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 62)
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
@@ -372,7 +409,7 @@ local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UD
 
 local ResetPosBtn = Instance.new("TextButton")
 ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
-ResetPosBtn.Position = UDim2.new(0, 5, 0, 74)
+ResetPosBtn.Position = UDim2.new(0, 5, 0, 84)
 ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResetPosBtn.Font = Enum.Font.GothamBold
@@ -384,7 +421,7 @@ local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UD
 
 local FlightToggleBtn = Instance.new("TextButton")
 FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
-FlightToggleBtn.Position = UDim2.new(0, 5, 0, 98)
+FlightToggleBtn.Position = UDim2.new(0, 5, 0, 108)
 FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 100, 100)
 FlightToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlightToggleBtn.Font = Enum.Font.GothamBold
@@ -396,7 +433,7 @@ local FlightToggleCorner = Instance.new("UICorner") FlightToggleCorner.CornerRad
 
 local FlightLoadLabel = Instance.new("TextLabel")
 FlightLoadLabel.Size = UDim2.new(1, -10, 0, 16)
-FlightLoadLabel.Position = UDim2.new(0, 5, 0, 120)
+FlightLoadLabel.Position = UDim2.new(0, 5, 0, 130)
 FlightLoadLabel.BackgroundTransparency = 1
 FlightLoadLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 FlightLoadLabel.Font = Enum.Font.Gotham
@@ -407,7 +444,7 @@ FlightLoadLabel.Parent = Page2
 
 local SettingsFoldBtn = Instance.new("TextButton")
 SettingsFoldBtn.Size = UDim2.new(1, -10, 0, 24)
-SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 138)
+SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 148)
 SettingsFoldBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 SettingsFoldBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SettingsFoldBtn.Font = Enum.Font.GothamBold
@@ -417,8 +454,8 @@ SettingsFoldBtn.Parent = Page2
 local SettingsFoldCorner = Instance.new("UICorner") SettingsFoldCorner.CornerRadius = UDim.new(0,4) SettingsFoldCorner.Parent = SettingsFoldBtn
 
 local SettingsContent = Instance.new("Frame")
-SettingsContent.Size = UDim2.new(1, -10, 0, 120)
-SettingsContent.Position = UDim2.new(0, 5, 0, 164)
+SettingsContent.Size = UDim2.new(1, -10, 0, 110)
+SettingsContent.Position = UDim2.new(0, 5, 0, 174)
 SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
@@ -524,7 +561,7 @@ applyButtonAutoScale(FlashstrikeButton)
 FlashstrikeButton.Parent = FloatingGui
 local FlashstrikeCorner = Instance.new("UICorner") FlashstrikeCorner.CornerRadius = UDim.new(0, 8) FlashstrikeCorner.Parent = FlashstrikeButton
 
--- 新增 Kick 按鈕（改名 One punch）
+-- One punch 按钮
 local KickButton = Instance.new("TextButton")
 KickButton.Size = UDim2.new(0, 60, 0, 60)
 KickButton.Position = DEFAULT_POSITIONS.Kick
@@ -537,7 +574,20 @@ applyButtonAutoScale(KickButton)
 KickButton.Parent = FloatingGui
 local KickCorner = Instance.new("UICorner") KickCorner.CornerRadius = UDim.new(0, 8) KickCorner.Parent = KickButton
 
--- ==================== 移動鎖定開關（預先聲明） ====================
+-- Combo 按钮
+local ComboButton = Instance.new("TextButton")
+ComboButton.Size = UDim2.new(0, 60, 0, 60)
+ComboButton.Position = DEFAULT_POSITIONS.Combo
+ComboButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ComboButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ComboButton.Font = Enum.Font.GothamBold
+ComboButton.Text = "Donut"
+ComboButton.Visible = false
+applyButtonAutoScale(ComboButton)
+ComboButton.Parent = FloatingGui
+local ComboCorner = Instance.new("UICorner") ComboCorner.CornerRadius = UDim.new(0, 8) ComboCorner.Parent = ComboButton
+
+-- ==================== 移動鎖定開關 ====================
 local moveUnlocked = false
 
 -- ==================== 雷射眼邏輯 ====================
@@ -767,7 +817,7 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Kick 邏輯
+-- ==================== Kick 邏輯（One punch + WebBlossom 循环，固定40次Kick） ====================
 local function findZodiacKickRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -808,43 +858,149 @@ local function findSteveHShieldCounterRemote()
 	return nil
 end
 
+local function findSpiderManWebBlossomRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("spiderman") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower():find("webbloss") then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
 KickButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	local kickRemote = findZodiacKickRemote()
 	local shieldRemote = findSteveHShieldCounterRemote()
+	local webBlossomRemote = findSpiderManWebBlossomRemote()
 	
-	-- 先執行 Steve_H 的 ShieldCounter（破防）
+	kickActive = true
+	
+	task.spawn(function()
+		while kickActive and webBlossomRemote do
+			webBlossomRemote:FireServer()
+			task.wait(0.1)
+		end
+	end)
+	
 	if shieldRemote then
 		shieldRemote:FireServer()
 	end
 	
-	-- 等待 0.5 秒
 	task.wait(0.5)
 	
-	-- 再執行 Kick（根據開關決定同時或循環）
 	if kickRemote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do kickRemote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					kickRemote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			for i = 1, 40 do kickRemote:FireServer() end
+		for i = 1, 40 do
+			kickRemote:FireServer()
 		end
+		kickActive = false
+		
 		KickButton.BackgroundColor3 = Color3.fromRGB(200, 50, 200)
 		task.wait(0.1)
 		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
 	else
+		kickActive = false
 		KickButton.Text = "No Kick"
 		KickButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 		task.wait(0.5)
 		KickButton.Text = "One punch"
 		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
 	end
+end)
+
+-- ==================== Combo 邏輯（Donut） ====================
+local function findTheBatmanMoveOneRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("thebatman") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "moveone" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findTheBatmanBatMobileRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("thebatman") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "batmobile" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findHomelanderEarClapRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("homelander") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "earclap" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+ComboButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+	
+	local batmanMoveOne = findTheBatmanMoveOneRemote()
+	local batMobile = findTheBatmanBatMobileRemote()
+	
+	if batmanMoveOne then batmanMoveOne:FireServer() end
+	if batMobile then batMobile:FireServer() end
+	
+	task.spawn(function()
+		task.wait(2.8)
+		local earClap = findHomelanderEarClapRemote()
+		if earClap then
+			for i = 1, 40 do
+				earClap:FireServer()
+			end
+		end
+	end)
+	
+	ComboButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	task.wait(0.1)
+	ComboButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 end)
 
 -- Homelander Fly
@@ -883,9 +1039,10 @@ ResetPosBtn.MouseButton1Click:Connect(function()
 	OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
 	FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
 	KickButton.Position = DEFAULT_POSITIONS.Kick
+	ComboButton.Position = DEFAULT_POSITIONS.Combo
 end)
 
--- 拖動邏輯（保留原樣）
+-- 拖動邏輯
 local laserDragging = false
 local laserDragStart, laserStartPos
 
@@ -946,6 +1103,18 @@ KickButton.InputBegan:Connect(function(input)
 	end
 end)
 
+local comboDragging = false
+local comboDragStart, comboStartPos
+
+ComboButton.InputBegan:Connect(function(input)
+	if not moveUnlocked then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		comboDragging = true
+		comboDragStart = input.Position
+		comboStartPos = ComboButton.Position
+	end
+end)
+
 UIS.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		laserDragging = false
@@ -953,6 +1122,7 @@ UIS.InputEnded:Connect(function(input)
 		overthrowDragging = false
 		flashstrikeDragging = false
 		kickDragging = false
+		comboDragging = false
 	end
 end)
 
@@ -1002,17 +1172,80 @@ UIS.InputChanged:Connect(function(input)
 			kickStartPos.Y.Offset + delta.Y
 		)
 	end
+	if comboDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - comboDragStart
+		ComboButton.Position = UDim2.new(
+			comboStartPos.X.Scale,
+			comboStartPos.X.Offset + delta.X,
+			comboStartPos.Y.Scale,
+			comboStartPos.Y.Offset + delta.Y
+		)
+	end
 end)
 
 -- Homelanders Mod
 local homelanderModActive = false
+
+local function findAmazoFinisherRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("amazo") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "finisher" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function startFinisherLoop()
+	if finisherActive then return end
+	local remote = findAmazoFinisherRemote()
+	if not remote then return end
+	finisherActive = true
+	finisherLoopThread = task.spawn(function()
+		while finisherActive do
+			remote:FireServer()
+			task.wait(0.1)
+		end
+	end)
+end
+
+local function stopFinisherLoop()
+	finisherActive = false
+	if finisherLoopThread then
+		task.cancel(finisherLoopThread)
+		finisherLoopThread = nil
+	end
+end
+
 local function updateHomelanderModButton()
 	if homelanderModActive then
 		HomelanderModBtn.Text = "Cancel Mod"
 		HomelanderModBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+		HomelanderModBtn.Size = UDim2.new(0.5, -8, 0, 24)
+		FinisherButton.Visible = true
+		FinisherButton.Text = finisherEnabled and "Finisher ON" or "Finisher OFF"
+		FinisherButton.BackgroundColor3 = finisherEnabled and Color3.fromRGB(30, 100, 60) or Color3.fromRGB(100, 40, 40)
+		if finisherEnabled then
+			startFinisherLoop()
+		else
+			stopFinisherLoop()
+		end
 	else
 		HomelanderModBtn.Text = "Homelanders Mod"
 		HomelanderModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
+		HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
+		FinisherButton.Visible = false
+		stopFinisherLoop()
 	end
 end
 
@@ -1023,7 +1256,21 @@ HomelanderModBtn.MouseButton1Click:Connect(function()
 	OverthrowButton.Visible = homelanderModActive
 	FlashstrikeButton.Visible = homelanderModActive
 	KickButton.Visible = homelanderModActive
+	ComboButton.Visible = homelanderModActive
 	updateHomelanderModButton()
+end)
+
+FinisherButton.MouseButton1Click:Connect(function()
+	finisherEnabled = not finisherEnabled
+	FinisherButton.Text = finisherEnabled and "Finisher ON" or "Finisher OFF"
+	FinisherButton.BackgroundColor3 = finisherEnabled and Color3.fromRGB(30, 100, 60) or Color3.fromRGB(100, 40, 40)
+	if finisherEnabled then
+		if homelanderModActive then
+			startFinisherLoop()
+		end
+	else
+		stopFinisherLoop()
+	end
 end)
 
 updateHomelanderModButton()
@@ -1074,6 +1321,8 @@ local function CancelScript()
 	loopInterval = 0
 	isCustomLoopActive = false
 	simultaneousEnabled = false
+	kickActive = false
+	stopFinisherLoop()
 	if currentLoopThread then
 		task.cancel(currentLoopThread)
 		currentLoopThread = nil
