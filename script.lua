@@ -615,7 +615,7 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ==================== Kick 邏輯（改名 One punch，執行40次+ShieldCounter一次） ====================
+-- ==================== Kick 邏輯（改名 One punch，先破防後等0.5秒再40次Kick） ====================
 local function findZodiacKickRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -661,12 +661,16 @@ KickButton.MouseButton1Click:Connect(function()
 	local kickRemote = findZodiacKickRemote()
 	local shieldRemote = findSteveHShieldCounterRemote()
 	
+	-- 先執行 Steve_H 的 ShieldCounter（破防）
+	if shieldRemote then
+		shieldRemote:FireServer()
+	end
+	
+	-- 等待 0.5 秒
+	task.wait(0.5)
+	
+	-- 再快速連續執行 40 次 Kick（無等待）
 	if kickRemote then
-		-- 先執行一次 ShieldCounter（如果有）
-		if shieldRemote then
-			shieldRemote:FireServer()
-		end
-		-- 執行 40 次 Kick
 		for i = 1, 40 do
 			kickRemote:FireServer()
 		end
@@ -675,7 +679,7 @@ KickButton.MouseButton1Click:Connect(function()
 		task.wait(0.1)
 		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
 	else
-		KickButton.Text = "No Remote"
+		KickButton.Text = "No Kick"
 		KickButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 		task.wait(0.5)
 		KickButton.Text = "One punch"
