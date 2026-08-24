@@ -16,6 +16,8 @@ local oldOverthrowGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Dr
 if oldOverthrowGui then oldOverthrowGui:Destroy() end
 local oldFinalGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubFinalButton")
 if oldFinalGui then oldFinalGui:Destroy() end
+local oldKickGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubKickButton")
+if oldKickGui then oldKickGui:Destroy() end
 
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Root = Character:WaitForChild("HumanoidRootPart")
@@ -26,7 +28,8 @@ local DEFAULT_POSITIONS = {
 	Laser = UDim2.new(1, -240, 0.5, -30),
 	Upthrow = UDim2.new(1, -310, 0.5, -30),
 	Overthrow = UDim2.new(1, -310, 0.5, 40),
-	Flashstrike = UDim2.new(1, -310, 0.5, -110)
+	Flashstrike = UDim2.new(1, -310, 0.5, -110),
+	Kick = UDim2.new(1, -250, 0.5, -170) -- Flashstrike 右上角
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -42,7 +45,9 @@ Main.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
 local MainCorner = Instance.new("UICorner") MainCorner.CornerRadius = UDim.new(0,8) MainCorner.Parent = Main
-local uiScale = Instance.new("UIScale") uiScale.Scale = 1 uiScale.Parent = Mainlocal TopBar = Instance.new("Frame")
+local uiScale = Instance.new("UIScale") uiScale.Scale = 1 uiScale.Parent = Main
+
+local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1,0,0,30)
 TopBar.BackgroundColor3 = Color3.fromRGB(22,22,22)
 TopBar.BorderSizePixel = 0
@@ -85,7 +90,9 @@ UIS.InputChanged:Connect(function(input)
 		local delta = input.Position - iconDragStart
 		MinimizeIcon.Position = UDim2.new(iconStartPos.X.Scale, iconStartPos.X.Offset + delta.X, iconStartPos.Y.Scale, iconStartPos.Y.Offset + delta.Y)
 	end
-end)local TabContainer = Instance.new("Frame")
+end)
+
+local TabContainer = Instance.new("Frame")
 TabContainer.Size = UDim2.new(1,0,0,32) TabContainer.Position = UDim2.new(0,0,0,30) TabContainer.BackgroundColor3 = Color3.fromRGB(18,18,18) TabContainer.BorderSizePixel = 0 TabContainer.Parent = Main
 
 local Tab1 = Instance.new("TextButton")
@@ -161,7 +168,9 @@ GodModeBtn.MouseButton1Click:Connect(function()
 		task.wait(0.7)
 		if currentCharacter and currentRoot then currentRoot.CFrame = originalCFrame end
 	end)
-end)local LoopContainer1 = Instance.new("Frame")
+end)
+
+local LoopContainer1 = Instance.new("Frame")
 LoopContainer1.Size = UDim2.new(1,-10,0,20) LoopContainer1.Position = UDim2.new(0,5,0,49) LoopContainer1.BackgroundColor3 = Color3.fromRGB(20,20,20) LoopContainer1.BorderSizePixel = 0 LoopContainer1.Parent = Page1
 local LoopContainer1Corner = Instance.new("UICorner") LoopContainer1Corner.CornerRadius = UDim.new(0,4) LoopContainer1Corner.Parent = LoopContainer1
 
@@ -204,7 +213,9 @@ CustomLabel.TextColor3 = Color3.fromRGB(200,200,200) CustomLabel.Font = Enum.Fon
 
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1,-4,1,-95) Scroll.Position = UDim2.new(0,2,0,93) Scroll.CanvasSize = UDim2.new(0,0,0,0) Scroll.ScrollBarThickness = 4 Scroll.BackgroundTransparency = 1 Scroll.Parent = Page1
-local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll-- ==================== 第二頁 Extras ====================
+local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
+
+-- ==================== 第二頁 Extras ====================
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -293,7 +304,9 @@ SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
 SettingsContent.Parent = Page2
-local SettingsContentCorner = Instance.new("UICorner") SettingsContentCorner.CornerRadius = UDim.new(0,4) SettingsContentCorner.Parent = SettingsContentlocal SliderTitle = Instance.new("TextLabel")
+local SettingsContentCorner = Instance.new("UICorner") SettingsContentCorner.CornerRadius = UDim.new(0,4) SettingsContentCorner.Parent = SettingsContent
+
+local SliderTitle = Instance.new("TextLabel")
 SliderTitle.Size = UDim2.new(1,-10,0,18) SliderTitle.Position = UDim2.new(0,5,0,5) SliderTitle.BackgroundTransparency = 1
 SliderTitle.TextColor3 = Color3.fromRGB(220,220,220) SliderTitle.Font = Enum.Font.GothamBold SliderTitle.TextSize = 11 SliderTitle.Text = "UI Scale" SliderTitle.TextXAlignment = Enum.TextXAlignment.Left SliderTitle.Parent = SettingsContent
 
@@ -392,8 +405,23 @@ applyButtonAutoScale(FlashstrikeButton)
 FlashstrikeButton.Parent = FloatingGui
 local FlashstrikeCorner = Instance.new("UICorner") FlashstrikeCorner.CornerRadius = UDim.new(0, 8) FlashstrikeCorner.Parent = FlashstrikeButton
 
+-- 新增 Kick 按鈕（改名 One punch）
+local KickButton = Instance.new("TextButton")
+KickButton.Size = UDim2.new(0, 60, 0, 60)
+KickButton.Position = DEFAULT_POSITIONS.Kick
+KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
+KickButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KickButton.Font = Enum.Font.GothamBold
+KickButton.Text = "One punch"
+KickButton.Visible = false
+applyButtonAutoScale(KickButton)
+KickButton.Parent = FloatingGui
+local KickCorner = Instance.new("UICorner") KickCorner.CornerRadius = UDim.new(0, 8) KickCorner.Parent = KickButton
+
 -- ==================== 移動鎖定開關（預先聲明） ====================
-local moveUnlocked = false-- ==================== 雷射眼邏輯 ====================
+local moveUnlocked = false
+
+-- ==================== 雷射眼邏輯 ====================
 local laserActive = false
 local laserThread = nil
 
@@ -585,7 +613,77 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 		FlashstrikeButton.Text = "Flashstrike"
 		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
 	end
-end)-- ==================== Homelander Fly 執行邏輯 ====================
+end)
+
+-- ==================== Kick 邏輯（改名 One punch，執行40次+ShieldCounter一次） ====================
+local function findZodiacKickRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("zodiac") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "kick" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findSteveHShieldCounterRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower() == "steve_h" then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name == "ShieldCounter" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+KickButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+	local kickRemote = findZodiacKickRemote()
+	local shieldRemote = findSteveHShieldCounterRemote()
+	
+	if kickRemote then
+		-- 先執行一次 ShieldCounter（如果有）
+		if shieldRemote then
+			shieldRemote:FireServer()
+		end
+		-- 執行 40 次 Kick
+		for i = 1, 40 do
+			kickRemote:FireServer()
+		end
+		-- 視覺回饋
+		KickButton.BackgroundColor3 = Color3.fromRGB(200, 50, 200)
+		task.wait(0.1)
+		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
+	else
+		KickButton.Text = "No Remote"
+		KickButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		task.wait(0.5)
+		KickButton.Text = "One punch"
+		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
+	end
+end)
+
+-- ==================== Homelander Fly 執行邏輯 ====================
 FlightToggleBtn.MouseButton1Click:Connect(function()
 	if flightTask then return end
 	flightTask = task.spawn(function()
@@ -620,6 +718,7 @@ ResetPosBtn.MouseButton1Click:Connect(function()
 	UpthrowButton.Position = DEFAULT_POSITIONS.Upthrow
 	OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
 	FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
+	KickButton.Position = DEFAULT_POSITIONS.Kick
 end)
 
 -- ==================== 浮動按鈕拖動邏輯 ====================
@@ -671,12 +770,25 @@ FlashstrikeButton.InputBegan:Connect(function(input)
 	end
 end)
 
+local kickDragging = false
+local kickDragStart, kickStartPos
+
+KickButton.InputBegan:Connect(function(input)
+	if not moveUnlocked then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		kickDragging = true
+		kickDragStart = input.Position
+		kickStartPos = KickButton.Position
+	end
+end)
+
 UIS.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		laserDragging = false
 		upthrowDragging = false
 		overthrowDragging = false
 		flashstrikeDragging = false
+		kickDragging = false
 	end
 end)
 
@@ -717,9 +829,18 @@ UIS.InputChanged:Connect(function(input)
 			flashstrikeStartPos.Y.Offset + delta.Y
 		)
 	end
+	if kickDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - kickDragStart
+		KickButton.Position = UDim2.new(
+			kickStartPos.X.Scale,
+			kickStartPos.X.Offset + delta.X,
+			kickStartPos.Y.Scale,
+			kickStartPos.Y.Offset + delta.Y
+		)
+	end
 end)
 
--- Homelanders Mod 按鈕切換四個浮動按鈕可見性
+-- Homelanders Mod 按鈕切換浮動按鈕可見性（包含 Kick）
 local homelanderModActive = false
 local function updateHomelanderModButton()
 	if homelanderModActive then
@@ -737,6 +858,7 @@ HomelanderModBtn.MouseButton1Click:Connect(function()
 	UpthrowButton.Visible = homelanderModActive
 	OverthrowButton.Visible = homelanderModActive
 	FlashstrikeButton.Visible = homelanderModActive
+	KickButton.Visible = homelanderModActive
 	updateHomelanderModButton()
 end)
 
