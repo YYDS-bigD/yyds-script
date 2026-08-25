@@ -33,12 +33,12 @@ local finisherLoopThread = nil       -- 循环线程
 local finisherActive = false         -- 循环是否正在运行
 
 local DEFAULT_POSITIONS = {
-	Laser = UDim2.new(1, -240, 0.5, -100),
+	Laser = UDim2.new(1, -240, 0.5, -100), -- 与 Flashstrike 保持 10 像素间隙
 	Upthrow = UDim2.new(1, -310, 0.5, -30),
 	Overthrow = UDim2.new(1, -310, 0.5, 40),
-	Flashstrike = UDim2.new(1, -310, 0.5, -100),
-	Kick = UDim2.new(1, -240, 0.5, -170),
-	Combo = UDim2.new(1, -310, 0.5, -170)
+	Flashstrike = UDim2.new(1, -310, 0.5, -100), -- 下移10，与Upthrow间距70
+	Kick = UDim2.new(1, -240, 0.5, -170),      -- 跟随Donut右边，X = -240
+	Combo = UDim2.new(1, -310, 0.5, -170)      -- 与Flashstrike垂直对齐
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -341,24 +341,7 @@ Scroll.BackgroundTransparency = 1
 Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
--- ==================== 第二頁 Extras（可滚动） ====================
-local ExtrasScroll = Instance.new("ScrollingFrame")
-ExtrasScroll.Size = UDim2.new(1,0,1,0)
-ExtrasScroll.Position = UDim2.new(0,0,0,0)
-ExtrasScroll.CanvasSize = UDim2.new(0,0,0,400)
-ExtrasScroll.ScrollBarThickness = 4
-ExtrasScroll.BackgroundTransparency = 1
-ExtrasScroll.BottomImage = "rbxassetid://0"
-ExtrasScroll.Parent = Page2
-
-local ScrollBg = Instance.new("TextButton")
-ScrollBg.Size = UDim2.new(1,0,1,0)
-ScrollBg.BackgroundTransparency = 1
-ScrollBg.Text = ""
-ScrollBg.AutoButtonColor = false
-ScrollBg.ZIndex = 0
-ScrollBg.Parent = ExtrasScroll
-
+-- ==================== 第二頁 Extras ====================
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -368,7 +351,7 @@ HomelanderModBtn.Font = Enum.Font.GothamBold
 HomelanderModBtn.TextSize = 12
 HomelanderModBtn.Text = "Homelanders Mod"
 HomelanderModBtn.TextScaled = true
-HomelanderModBtn.Parent = ExtrasScroll
+HomelanderModBtn.Parent = Page2
 local HomelanderModCorner = Instance.new("UICorner") HomelanderModCorner.CornerRadius = UDim.new(0,4) HomelanderModCorner.Parent = HomelanderModBtn
 
 local FinisherButton = Instance.new("TextButton")
@@ -381,9 +364,10 @@ FinisherButton.TextSize = 10
 FinisherButton.Text = "Auto Finisher ON"
 FinisherButton.TextScaled = true
 FinisherButton.Visible = false
-FinisherButton.Parent = ExtrasScroll
+FinisherButton.Parent = Page2
 local FinisherCorner = Instance.new("UICorner") FinisherCorner.CornerRadius = UDim.new(0,4) FinisherCorner.Parent = FinisherButton
 
+-- 修改：将原 "Please use Homelander" 替换为雷射眼适配说明
 local LaserCompatibilityLabel = Instance.new("TextLabel")
 LaserCompatibilityLabel.Size = UDim2.new(1, -10, 0, 14)
 LaserCompatibilityLabel.Position = UDim2.new(0, 5, 0, 36)
@@ -393,115 +377,75 @@ LaserCompatibilityLabel.Font = Enum.Font.Gotham
 LaserCompatibilityLabel.TextSize = 6
 LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
 LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
-LaserCompatibilityLabel.Parent = ExtrasScroll
+LaserCompatibilityLabel.Parent = Page2
 
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 52)
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 62)
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
 MoveModeBtn.TextSize = 10
 MoveModeBtn.Text = "Move Skills Mode: Locked"
 MoveModeBtn.TextScaled = true
-MoveModeBtn.Parent = ExtrasScroll
+MoveModeBtn.Parent = Page2
 local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UDim.new(0,4) MoveModeCorner.Parent = MoveModeBtn
 
--- 新增内容放在 MoveModeBtn 下方
-local NewLabel = Instance.new("TextLabel")
-NewLabel.Size = UDim2.new(1, -10, 0, 14)
-NewLabel.Position = UDim2.new(0, 5, 0, 74)
-NewLabel.BackgroundTransparency = 1
-NewLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-NewLabel.Font = Enum.Font.GothamBold
-NewLabel.TextSize = 8
-NewLabel.Text = "[ NEW Discovered 2026-08-24 ]"
-NewLabel.TextXAlignment = Enum.TextXAlignment.Center
-NewLabel.Parent = ExtrasScroll
-
-local InvisibleButton = Instance.new("TextButton")
-InvisibleButton.Size = UDim2.new(1, -10, 0, 20)
-InvisibleButton.Position = UDim2.new(0, 5, 0, 90)
-InvisibleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-InvisibleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-InvisibleButton.Font = Enum.Font.GothamBold
-InvisibleButton.TextSize = 10
-InvisibleButton.Text = "Invisibility"
-InvisibleButton.TextScaled = true
-InvisibleButton.Parent = ExtrasScroll
-local InvisibleCorner = Instance.new("UICorner") InvisibleCorner.CornerRadius = UDim.new(0,4) InvisibleCorner.Parent = InvisibleButton
-
-local InvisibleHint = Instance.new("TextLabel")
-InvisibleHint.Size = UDim2.new(1, -10, 0, 40)
-InvisibleHint.Position = UDim2.new(0, 5, 0, 112)
-InvisibleHint.BackgroundTransparency = 1
-InvisibleHint.TextColor3 = Color3.fromRGB(255, 0, 0)
-InvisibleHint.Font = Enum.Font.Gotham
-InvisibleHint.TextSize = 7
-InvisibleHint.Text = "Note: Not all characters work.\nSuccess ONLY if body, name & health are ALL invisible."
-InvisibleHint.TextWrapped = true
-InvisibleHint.TextXAlignment = Enum.TextXAlignment.Left
-InvisibleHint.TextYAlignment = Enum.TextYAlignment.Top
-InvisibleHint.Parent = ExtrasScroll
-
--- 【修改】ResetPosBtn 初始位置与尺寸调整，使其与 MoveModeBtn 并排
 local ResetPosBtn = Instance.new("TextButton")
-ResetPosBtn.Size = UDim2.new(0.5, -8, 0, 20)
-ResetPosBtn.Position = UDim2.new(0.5, 2, 0, 52)  -- 与 MoveModeBtn 同一行
+ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
+ResetPosBtn.Position = UDim2.new(0, 5, 0, 84)
 ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResetPosBtn.Font = Enum.Font.GothamBold
 ResetPosBtn.TextSize = 10
 ResetPosBtn.Text = "Reset"
-ResetPosBtn.TextScaled = true
 ResetPosBtn.Visible = false
-ResetPosBtn.Parent = ExtrasScroll
+ResetPosBtn.Parent = Page2
 local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UDim.new(0,4) ResetPosCorner.Parent = ResetPosBtn
 
 local FlightToggleBtn = Instance.new("TextButton")
 FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
-FlightToggleBtn.Position = UDim2.new(0, 5, 0, 172) -- 原位置不变
+FlightToggleBtn.Position = UDim2.new(0, 5, 0, 108)
 FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 100, 100)
 FlightToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlightToggleBtn.Font = Enum.Font.GothamBold
 FlightToggleBtn.TextSize = 12
 FlightToggleBtn.Text = "Homelander Fly"
 FlightToggleBtn.TextScaled = true
-FlightToggleBtn.Parent = ExtrasScroll
+FlightToggleBtn.Parent = Page2
 local FlightToggleCorner = Instance.new("UICorner") FlightToggleCorner.CornerRadius = UDim.new(0,4) FlightToggleCorner.Parent = FlightToggleBtn
 
 local FlightLoadLabel = Instance.new("TextLabel")
 FlightLoadLabel.Size = UDim2.new(1, -10, 0, 16)
-FlightLoadLabel.Position = UDim2.new(0, 5, 0, 194)
+FlightLoadLabel.Position = UDim2.new(0, 5, 0, 130)
 FlightLoadLabel.BackgroundTransparency = 1
 FlightLoadLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 FlightLoadLabel.Font = Enum.Font.Gotham
 FlightLoadLabel.TextSize = 10
 FlightLoadLabel.Text = "(Max load 20s)"
 FlightLoadLabel.TextXAlignment = Enum.TextXAlignment.Left
-FlightLoadLabel.Parent = ExtrasScroll
+FlightLoadLabel.Parent = Page2
 
 local SettingsFoldBtn = Instance.new("TextButton")
 SettingsFoldBtn.Size = UDim2.new(1, -10, 0, 24)
-SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 212)
+SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 148)
 SettingsFoldBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 SettingsFoldBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SettingsFoldBtn.Font = Enum.Font.GothamBold
 SettingsFoldBtn.TextSize = 12
 SettingsFoldBtn.Text = "Settings ▼"
-SettingsFoldBtn.Parent = ExtrasScroll
+SettingsFoldBtn.Parent = Page2
 local SettingsFoldCorner = Instance.new("UICorner") SettingsFoldCorner.CornerRadius = UDim.new(0,4) SettingsFoldCorner.Parent = SettingsFoldBtn
 
 local SettingsContent = Instance.new("Frame")
 SettingsContent.Size = UDim2.new(1, -10, 0, 110)
-SettingsContent.Position = UDim2.new(0, 5, 0, 238)
+SettingsContent.Position = UDim2.new(0, 5, 0, 174)
 SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
-SettingsContent.Parent = ExtrasScroll
+SettingsContent.Parent = Page2
 local SettingsContentCorner = Instance.new("UICorner") SettingsContentCorner.CornerRadius = UDim.new(0,4) SettingsContentCorner.Parent = SettingsContent
 
--- SettingsContent 内部
 local SliderTitle = Instance.new("TextLabel")
 SliderTitle.Size = UDim2.new(1,-10,0,18) SliderTitle.Position = UDim2.new(0,5,0,5) SliderTitle.BackgroundTransparency = 1
 SliderTitle.TextColor3 = Color3.fromRGB(220,220,220) SliderTitle.Font = Enum.Font.GothamBold SliderTitle.TextSize = 11 SliderTitle.Text = "UI Scale" SliderTitle.TextXAlignment = Enum.TextXAlignment.Left SliderTitle.Parent = SettingsContent
@@ -540,78 +484,6 @@ SettingsFoldBtn.MouseButton1Click:Connect(function()
 	SettingsFoldBtn.Text = settingsOpen and "Settings ▲" or "Settings ▼"
 end)
 
--- Invisible 按钮逻辑（类似 God Mode 高空传送）
-local function findTheBatmanMiniExplosiveRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("thebatman") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "miniexplosive" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-InvisibleButton.MouseButton1Click:Connect(function()
-	task.spawn(function()
-		local currentCharacter = LocalPlayer.Character
-		if not currentCharacter then return end
-		local currentRoot = currentCharacter:FindFirstChild("HumanoidRootPart")
-		if not currentRoot then return end
-		local originalCFrame = currentRoot.CFrame
-		currentRoot.CFrame = originalCFrame + Vector3.new(0, 2000, 0)
-		task.wait(0.1)
-		local remote = findTheBatmanMiniExplosiveRemote()
-		if remote then
-			remote:FireServer()
-		end
-		task.wait(0.7)
-		if currentCharacter and currentRoot then
-			currentRoot.CFrame = originalCFrame
-		end
-	end)
-
-	InvisibleButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-	task.wait(0.1)
-	InvisibleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-end)
-
--- 滚动拖动逻辑
-local scrollDragging = false
-local scrollStartPos = nil
-local startCanvasPos = nil
-
-ScrollBg.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		scrollDragging = true
-		scrollStartPos = input.Position
-		startCanvasPos = ExtrasScroll.CanvasPosition
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		scrollDragging = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if scrollDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - scrollStartPos
-		local maxY = math.max(0, ExtrasScroll.CanvasSize.Y.Offset - ExtrasScroll.AbsoluteSize.Y)
-		ExtrasScroll.CanvasPosition = Vector2.new(startCanvasPos.X, math.clamp(startCanvasPos.Y - delta.Y, 0, maxY))
-	end
-end)
-
 -- ==================== 浮動按鈕容器 ====================
 local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "DracoHubFloatingButtons"
@@ -625,6 +497,7 @@ local function applyButtonAutoScale(button)
 	button.TextSize = 14
 end
 
+-- 雷射眼按钮：高度减半（30），位置在 Flashstrike 右边，间隔 10
 local LaserButton = Instance.new("TextButton")
 LaserButton.Size = UDim2.new(0, 60, 0, 30)
 LaserButton.Position = DEFAULT_POSITIONS.Laser
@@ -1099,10 +972,11 @@ ComboButton.MouseButton1Click:Connect(function()
 	if batMobile then batMobile:FireServer() end
 	
 	task.spawn(function()
-		task.wait(2.7)
+		task.wait(2.7) -- 修改：2.8 改为 2.7
 		local kickRemote = findZodiacKickRemote()
 		local earClapRemote = findHomelanderEarClapRemote()
 		
+		-- 同时执行：39次Kick + 2次EarClap
 		if kickRemote then
 			for i = 1, 39 do
 				kickRemote:FireServer()
@@ -1135,14 +1009,11 @@ local function updateMoveModeButton()
 	if moveUnlocked then
 		MoveModeBtn.Text = "Move Skills Mode: Unlocked"
 		MoveModeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		MoveModeBtn.Size = UDim2.new(0.5, -8, 0, 20)    -- 缩小为一半
-		ResetPosBtn.Visible = true                        -- 显示重置按钮
-		ResetPosBtn.Size = UDim2.new(0.5, -8, 0, 20)     -- 重置按钮同样一半
+		ResetPosBtn.Visible = true
 	else
 		MoveModeBtn.Text = "Move Skills Mode: Locked"
 		MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)      -- 恢复全宽
-		ResetPosBtn.Visible = false                       -- 隐藏重置按钮
+		ResetPosBtn.Visible = false
 	end
 end
 
