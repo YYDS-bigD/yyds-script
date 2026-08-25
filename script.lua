@@ -1409,8 +1409,3 @@ LocalPlayer.CharacterAdded:Connect(function(newChar) Character = newChar task.wa
 SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
 AutoDetectCharacter() Refresh()
-
-RunService.RenderStepped:Connect(function()
-	if ScreenGui.Enabled then UIS.MouseBehavior = Enum.MouseBehavior.Default UIS.MouseIconEnabled = true end
-	if FloatingGui.Enabled then UIS.MouseBehavior = Enum.MouseBehavior.Default UIS.MouseIconEnabled = true end
-end)
