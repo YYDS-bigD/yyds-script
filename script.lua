@@ -922,26 +922,6 @@ local function findTheBatmanMoveOneRemote()
 	return nil
 end
 
-local function findTheBatmanBatMobileRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("thebatman") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "batmobile" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
 local function findHomelanderEarClapRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -966,13 +946,11 @@ ComboButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	
 	local batmanMoveOne = findTheBatmanMoveOneRemote()
-	local batMobile = findTheBatmanBatMobileRemote()
 	
 	if batmanMoveOne then batmanMoveOne:FireServer() end
-	if batMobile then batMobile:FireServer() end
 	
 	task.spawn(function()
-		task.wait(2.7) -- 修改：2.8 改为 2.7
+		task.wait(2.7)
 		local kickRemote = findZodiacKickRemote()
 		local earClapRemote = findHomelanderEarClapRemote()
 		
