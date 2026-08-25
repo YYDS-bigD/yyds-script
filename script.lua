@@ -251,7 +251,6 @@ AddBtn.Size = UDim2.new(0,16,0,16) AddBtn.Position = UDim2.new(0,118,0,3) AddBtn
 AddBtn.TextColor3 = Color3.fromRGB(220,220,220) AddBtn.Font = Enum.Font.GothamBold AddBtn.TextSize = 12 AddBtn.Text = "+" AddBtn.Parent = CustomLoopContainer
 local AddCorner = Instance.new("UICorner") AddCorner.CornerRadius = UDim.new(0,3) AddCorner.Parent = AddBtn
 
--- 更新UI函数
 local function updateControllerUI()
 	SimultaneousToggle.BackgroundColor3 = simultaneousEnabled and Color3.fromRGB(80,50,120) or Color3.fromRGB(40,40,40)
 	SimultaneousToggle.Text = simultaneousEnabled and "✓" or ""
@@ -259,7 +258,6 @@ local function updateControllerUI()
 	CustomToggle.Text = isCustomLoopActive and "✓" or ""
 end
 
--- Simultaneous 切换（互斥）
 SimultaneousToggle.MouseButton1Click:Connect(function()
 	if simultaneousEnabled then
 		simultaneousEnabled = false
@@ -273,7 +271,6 @@ SimultaneousToggle.MouseButton1Click:Connect(function()
 	updateControllerUI()
 end)
 
--- Custom Loop 切换（互斥）
 CustomToggle.MouseButton1Click:Connect(function()
 	if isCustomLoopActive then
 		isCustomLoopActive = false
@@ -367,7 +364,6 @@ FinisherButton.Visible = false
 FinisherButton.Parent = Page2
 local FinisherCorner = Instance.new("UICorner") FinisherCorner.CornerRadius = UDim.new(0,4) FinisherCorner.Parent = FinisherButton
 
--- 修改：将原 "Please use Homelander" 替换为雷射眼适配说明
 local LaserCompatibilityLabel = Instance.new("TextLabel")
 LaserCompatibilityLabel.Size = UDim2.new(1, -10, 0, 14)
 LaserCompatibilityLabel.Position = UDim2.new(0, 5, 0, 36)
@@ -497,7 +493,6 @@ local function applyButtonAutoScale(button)
 	button.TextSize = 14
 end
 
--- 雷射眼按钮：高度减半（30），位置在 Flashstrike 右边，间隔 10
 local LaserButton = Instance.new("TextButton")
 LaserButton.Size = UDim2.new(0, 60, 0, 30)
 LaserButton.Position = DEFAULT_POSITIONS.Laser
@@ -901,7 +896,7 @@ KickButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Combo 邏輯（Donut）
+-- Combo 邏輯（Donut → Batman MoveOne + VibrateArm x40）
 local function findTheBatmanMoveOneRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -922,16 +917,16 @@ local function findTheBatmanMoveOneRemote()
 	return nil
 end
 
-local function findHomelanderEarClapRemote()
+local function findTheFlashCwVibrateArmRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
 	for _, folder in ipairs(charactersFolder:GetChildren()) do
 		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("homelander") then
+			if folder.Name:lower():find("theflashcw") then
 				local remotesFolder = folder:FindFirstChild("Remotes")
 				if remotesFolder then
 					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "earclap" then
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "vibratearm" then
 							return remote
 						end
 					end
@@ -951,18 +946,10 @@ ComboButton.MouseButton1Click:Connect(function()
 	
 	task.spawn(function()
 		task.wait(2.7)
-		local kickRemote = findZodiacKickRemote()
-		local earClapRemote = findHomelanderEarClapRemote()
-		
-		-- 同时执行：39次Kick + 2次EarClap
-		if kickRemote then
-			for i = 1, 39 do
-				kickRemote:FireServer()
-			end
-		end
-		if earClapRemote then
-			for i = 1, 2 do
-				earClapRemote:FireServer()
+		local vibrateRemote = findTheFlashCwVibrateArmRemote()
+		if vibrateRemote then
+			for i = 1, 40 do
+				vibrateRemote:FireServer()
 			end
 		end
 	end)
@@ -1408,4 +1395,4 @@ end
 LocalPlayer.CharacterAdded:Connect(function(newChar) Character = newChar task.wait(1) AutoDetectCharacter() end)
 SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
-AutoDetectCharacter() Refresh()
+AutoDetectCharacter() Refresh() 
