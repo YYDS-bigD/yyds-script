@@ -28,7 +28,7 @@ local flightTask = nil
 local kickActive = false -- 用于控制 WebBlossom 循环
 
 -- 新增 Finisher 相关变量
-local finisherEnabled = true          -- 默认开启
+local finisherEnabled = false         -- 默认关闭
 local finisherLoopThread = nil       -- 循环线程
 local finisherActive = false         -- 循环是否正在运行
 
@@ -358,7 +358,7 @@ FinisherButton.BackgroundColor3 = Color3.fromRGB(30, 100, 60)
 FinisherButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FinisherButton.Font = Enum.Font.GothamBold
 FinisherButton.TextSize = 10
-FinisherButton.Text = "Auto Finisher ON"
+FinisherButton.Text = "Auto Finisher OFF"
 FinisherButton.TextScaled = true
 FinisherButton.Visible = false
 FinisherButton.Parent = Page2
