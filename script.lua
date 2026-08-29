@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- 清理舊 GUI
+-- Clean old GUIs
 local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubScannerV7")
 if oldGui then oldGui:Destroy() end
 local oldLaserGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubLaserButton")
@@ -20,25 +20,44 @@ local oldKickGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHu
 if oldKickGui then oldKickGui:Destroy() end
 local oldComboGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubComboButton")
 if oldComboGui then oldComboGui:Destroy() end
+local oldFloating = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubFloatingButtons")
+if oldFloating then oldFloating:Destroy() end
 
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Root = Character:WaitForChild("HumanoidRootPart")
 
+-- Global variables
 local flightTask = nil
-local kickActive = false -- 用于控制 WebBlossom 循环
-
--- 新增 Finisher 相关变量
-local finisherEnabled = false         -- 默认关闭
-local finisherLoopThread = nil       -- 循环线程
-local finisherActive = false         -- 循环是否正在运行
+local kickActive = false
+local finisherEnabled = false
+local finisherLoopThread = nil
+local finisherActive = false
+local upthrowCooldown = false
+local aimActive = false
+local aimTarget = nil
+local aimLine = nil
+local aimHighlight = nil
+local aimUpdateConnection = nil
+local laserActive = false
+local laserThread = nil
+local flashstrikeCooldown = 10
+local flashstrikeCooldownActive = false
+local simultaneousEnabled = false
+local simultaneousCount = 20
+local isCustomLoopActive = false
+local loopInterval = 0
+local moveUnlocked = false
+local currentLoopThread = nil
+local homelanderModActive = false
+local mohawkModActive = false
 
 local DEFAULT_POSITIONS = {
-	Laser = UDim2.new(1, -240, 0.5, -100), -- 与 Flashstrike 保持 10 像素间隙
+	Laser = UDim2.new(1, -240, 0.5, -100),
 	Upthrow = UDim2.new(1, -310, 0.5, -30),
-	Overthrow = UDim2.new(1, -310, 0.5, 40),
-	Flashstrike = UDim2.new(1, -310, 0.5, -100), -- 下移10，与Upthrow间距70
-	Kick = UDim2.new(1, -240, 0.5, -170),      -- 跟随Donut右边，X = -240
-	Combo = UDim2.new(1, -310, 0.5, -170)      -- 与Flashstrike垂直对齐
+	Flashstrike = UDim2.new(1, -310, 0.5, -100),
+	Kick = UDim2.new(1, -240, 0.5, -170),
+	Combo = UDim2.new(1, -310, 0.5, -170),
+	MoAim = UDim2.new(1, -240, 0.5, -100)
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -48,7 +67,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 160, 0, 350)
+Main.Size = UDim2.new(0, 160, 0, 380)
 Main.Position = UDim2.new(1, -160, 0, 0)
 Main.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 Main.BorderSizePixel = 0
@@ -130,7 +149,7 @@ Tab2.MouseButton1Click:Connect(function()
 	Tab1.BackgroundColor3 = Color3.fromRGB(35,35,35) Tab1.TextColor3 = Color3.fromRGB(180,180,180)
 end)
 
--- ==================== 第一頁 Scanner ====================
+-- ==================== Page 1 - Scanner ====================
 local SearchBox = Instance.new("TextBox")
 SearchBox.Size = UDim2.new(1,-10,0,22) SearchBox.Position = UDim2.new(0,5,0,3) SearchBox.BackgroundColor3 = Color3.fromRGB(28,28,28)
 SearchBox.TextColor3 = Color3.fromRGB(240,240,240) SearchBox.PlaceholderText = "Search..." SearchBox.Text = "" SearchBox.Font = Enum.Font.Gotham SearchBox.TextSize = 11 SearchBox.ClearTextOnFocus = false SearchBox.Parent = Page1
@@ -179,13 +198,7 @@ GodModeBtn.MouseButton1Click:Connect(function()
 	end)
 end)
 
--- ==================== 控制器定义（互斥） ====================
-local simultaneousEnabled = false
-local simultaneousCount = 20
-local isCustomLoopActive = false
-local loopInterval = 0
-
--- 创建 Simultaneous 控制器
+-- ==================== Controllers (mutually exclusive) ====================
 local SimultaneousContainer = Instance.new("Frame")
 SimultaneousContainer.Size = UDim2.new(1,-10,0,22)
 SimultaneousContainer.Position = UDim2.new(0,5,0,49)
@@ -218,7 +231,6 @@ SimultaneousAddBtn.Size = UDim2.new(0,16,0,16) SimultaneousAddBtn.Position = UDi
 SimultaneousAddBtn.TextColor3 = Color3.fromRGB(220,220,220) SimultaneousAddBtn.Font = Enum.Font.GothamBold SimultaneousAddBtn.TextSize = 12 SimultaneousAddBtn.Text = "+" SimultaneousAddBtn.Parent = SimultaneousContainer
 local SimultaneousAddCorner = Instance.new("UICorner") SimultaneousAddCorner.CornerRadius = UDim.new(0,3) SimultaneousAddCorner.Parent = SimultaneousAddBtn
 
--- 创建 Custom Loop 控制器
 local CustomLoopContainer = Instance.new("Frame")
 CustomLoopContainer.Size = UDim2.new(1,-10,0,22)
 CustomLoopContainer.Position = UDim2.new(0,5,0,73)
@@ -338,7 +350,7 @@ Scroll.BackgroundTransparency = 1
 Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
--- ==================== 第二頁 Extras ====================
+-- ==================== Page 2 - Extras ====================
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -375,9 +387,72 @@ LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
 LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
 LaserCompatibilityLabel.Parent = Page2
 
+-- ==================== Mohawk Button (TEST centered, Mohawk mode moved to right, icon slightly bigger) ====================
+local MohawkModBtn = Instance.new("TextButton")
+MohawkModBtn.Size = UDim2.new(1, -10, 0, 30)
+MohawkModBtn.Position = UDim2.new(0, 5, 0, 54)
+MohawkModBtn.BackgroundColor3 = Color3.fromRGB(70, 50, 30)
+MohawkModBtn.Text = ""
+MohawkModBtn.Parent = Page2
+local MohawkModCorner = Instance.new("UICorner") MohawkModCorner.CornerRadius = UDim.new(0,4) MohawkModCorner.Parent = MohawkModBtn
+
+-- Left icon (slightly bigger: 24x24)
+local MohawkIcon = Instance.new("ImageLabel")
+MohawkIcon.Name = "MohawkIcon"
+MohawkIcon.Size = UDim2.new(0, 24, 0, 24)
+MohawkIcon.Position = UDim2.new(0, 4, 0.5, -12)
+MohawkIcon.BackgroundTransparency = 1
+MohawkIcon.Image = "rbxassetid://126354613074842"
+MohawkIcon.ScaleType = Enum.ScaleType.Fit
+MohawkIcon.Parent = MohawkModBtn
+
+-- TEST label (centered at top)
+local TestLabel = Instance.new("TextLabel")
+TestLabel.Name = "TestLabel"
+TestLabel.Size = UDim2.new(1, -30, 0, 15)
+TestLabel.Position = UDim2.new(0, 28, 0, 2)
+TestLabel.BackgroundTransparency = 1
+TestLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+TestLabel.Font = Enum.Font.GothamBold
+TestLabel.TextSize = 10
+TestLabel.Text = "TEST"
+TestLabel.TextXAlignment = Enum.TextXAlignment.Center
+TestLabel.TextYAlignment = Enum.TextYAlignment.Top
+TestLabel.Parent = MohawkModBtn
+
+-- Mohawk mode label (right-aligned at bottom)
+local ModeLabel = Instance.new("TextLabel")
+ModeLabel.Name = "ModeLabel"
+ModeLabel.Size = UDim2.new(1, -30, 0, 13)
+ModeLabel.Position = UDim2.new(0, 28, 0, 15)
+ModeLabel.BackgroundTransparency = 1
+ModeLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+ModeLabel.Font = Enum.Font.GothamBold
+ModeLabel.TextSize = 9
+ModeLabel.Text = "Mohawk mode"
+ModeLabel.TextXAlignment = Enum.TextXAlignment.Right
+ModeLabel.TextYAlignment = Enum.TextYAlignment.Bottom
+ModeLabel.Parent = MohawkModBtn
+
+-- ====== Modified Hint text (two lines) ======
+local HintLabel = Instance.new("TextLabel")
+HintLabel.Name = "HintLabel"
+HintLabel.Size = UDim2.new(1, -10, 0, 20)  -- increased height
+HintLabel.Position = UDim2.new(0, 5, 0, 86)
+HintLabel.BackgroundTransparency = 1
+HintLabel.TextColor3 = Color3.fromRGB(255, 255, 0)  -- Yellow
+HintLabel.Font = Enum.Font.Gotham
+HintLabel.TextSize = 8
+HintLabel.Text = "Warehouse: Air slam\nless effective with ceiling"  -- two lines
+HintLabel.TextXAlignment = Enum.TextXAlignment.Left
+HintLabel.TextYAlignment = Enum.TextYAlignment.Top
+HintLabel.TextWrapped = true
+HintLabel.Parent = Page2
+
+-- ==================== Move Mode & Reset Pos (shifted down further) ====================
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 62)
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 110)  -- was 104, now 110
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
@@ -389,7 +464,7 @@ local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UD
 
 local ResetPosBtn = Instance.new("TextButton")
 ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
-ResetPosBtn.Position = UDim2.new(0, 5, 0, 84)
+ResetPosBtn.Position = UDim2.new(0, 5, 0, 132)  -- was 126, now 132
 ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResetPosBtn.Font = Enum.Font.GothamBold
@@ -401,7 +476,7 @@ local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UD
 
 local FlightToggleBtn = Instance.new("TextButton")
 FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
-FlightToggleBtn.Position = UDim2.new(0, 5, 0, 108)
+FlightToggleBtn.Position = UDim2.new(0, 5, 0, 156)  -- was 150, now 156
 FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 100, 100)
 FlightToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlightToggleBtn.Font = Enum.Font.GothamBold
@@ -413,7 +488,7 @@ local FlightToggleCorner = Instance.new("UICorner") FlightToggleCorner.CornerRad
 
 local FlightLoadLabel = Instance.new("TextLabel")
 FlightLoadLabel.Size = UDim2.new(1, -10, 0, 16)
-FlightLoadLabel.Position = UDim2.new(0, 5, 0, 130)
+FlightLoadLabel.Position = UDim2.new(0, 5, 0, 178)  -- was 172, now 178
 FlightLoadLabel.BackgroundTransparency = 1
 FlightLoadLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 FlightLoadLabel.Font = Enum.Font.Gotham
@@ -424,7 +499,7 @@ FlightLoadLabel.Parent = Page2
 
 local SettingsFoldBtn = Instance.new("TextButton")
 SettingsFoldBtn.Size = UDim2.new(1, -10, 0, 24)
-SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 148)
+SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 196)  -- was 190, now 196
 SettingsFoldBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 SettingsFoldBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SettingsFoldBtn.Font = Enum.Font.GothamBold
@@ -435,7 +510,7 @@ local SettingsFoldCorner = Instance.new("UICorner") SettingsFoldCorner.CornerRad
 
 local SettingsContent = Instance.new("Frame")
 SettingsContent.Size = UDim2.new(1, -10, 0, 110)
-SettingsContent.Position = UDim2.new(0, 5, 0, 174)
+SettingsContent.Position = UDim2.new(0, 5, 0, 222)  -- was 216, now 222
 SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
@@ -480,7 +555,7 @@ SettingsFoldBtn.MouseButton1Click:Connect(function()
 	SettingsFoldBtn.Text = settingsOpen and "Settings ▲" or "Settings ▼"
 end)
 
--- ==================== 浮動按鈕容器 ====================
+-- ==================== Floating Buttons ====================
 local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "DracoHubFloatingButtons"
 FloatingGui.ResetOnSpawn = false
@@ -516,18 +591,6 @@ UpthrowButton.Visible = false
 applyButtonAutoScale(UpthrowButton)
 UpthrowButton.Parent = FloatingGui
 local UpthrowCorner = Instance.new("UICorner") UpthrowCorner.CornerRadius = UDim.new(0, 8) UpthrowCorner.Parent = UpthrowButton
-
-local OverthrowButton = Instance.new("TextButton")
-OverthrowButton.Size = UDim2.new(0, 60, 0, 60)
-OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
-OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
-OverthrowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OverthrowButton.Font = Enum.Font.GothamBold
-OverthrowButton.Text = "Overthrow"
-OverthrowButton.Visible = false
-applyButtonAutoScale(OverthrowButton)
-OverthrowButton.Parent = FloatingGui
-local OverthrowCorner = Instance.new("UICorner") OverthrowCorner.CornerRadius = UDim.new(0, 8) OverthrowCorner.Parent = OverthrowButton
 
 local FlashstrikeButton = Instance.new("TextButton")
 FlashstrikeButton.Size = UDim2.new(0, 60, 0, 60)
@@ -565,13 +628,23 @@ applyButtonAutoScale(ComboButton)
 ComboButton.Parent = FloatingGui
 local ComboCorner = Instance.new("UICorner") ComboCorner.CornerRadius = UDim.new(0, 8) ComboCorner.Parent = ComboButton
 
--- ==================== 移動鎖定開關 ====================
-local moveUnlocked = false
+-- tp Button
+local MoAimButton = Instance.new("TextButton")
+MoAimButton.Size = UDim2.new(0, 60, 0, 30)
+MoAimButton.Position = DEFAULT_POSITIONS.MoAim
+MoAimButton.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
+MoAimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MoAimButton.Font = Enum.Font.GothamBold
+MoAimButton.Text = "tp\n(Hold)"
+MoAimButton.TextScaled = false
+MoAimButton.TextWrapped = true
+MoAimButton.TextSize = 11
+MoAimButton.TextYAlignment = Enum.TextYAlignment.Center
+MoAimButton.Visible = false
+MoAimButton.Parent = FloatingGui
+local MoAimCorner = Instance.new("UICorner") MoAimCorner.CornerRadius = UDim.new(0, 8) MoAimCorner.Parent = MoAimButton
 
--- ==================== 雷射眼邏輯 ====================
-local laserActive = false
-local laserThread = nil
-
+-- ==================== Remote Finders ====================
 local function findHomelanderMoveOneRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -592,40 +665,111 @@ local function findHomelanderMoveOneRemote()
 	return nil
 end
 
-local function setLaserActive(active)
-	laserActive = active
-	if active then
-		local remote = findHomelanderMoveOneRemote()
-		if not remote then
-			laserActive = false
-			LaserButton.Text = "No Remote"
-			LaserButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-			return
-		end
-		LaserButton.Text = "ON"
-		LaserButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		laserThread = task.spawn(function()
-			while laserActive do
-				remote:FireServer()
-				task.wait()
+local function findClosestPlayer(maxDistance)
+	local character = LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+
+	local closestPlayer = nil
+	local closestDistance = maxDistance or 4
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local targetCharacter = player.Character
+			if targetCharacter then
+				local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+				if targetRoot then
+					local distance = (root.Position - targetRoot.Position).Magnitude
+					if distance <= closestDistance then
+						closestPlayer = player
+						closestDistance = distance
+					end
+				end
 			end
-		end)
-	else
-		if laserThread then
-			task.cancel(laserThread)
-			laserThread = nil
 		end
-		LaserButton.Text = "Laser"
-		LaserButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
 	end
+	return closestPlayer
 end
 
-LaserButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	setLaserActive(not laserActive)
-end)
+local function findLuffyGatlingRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("luffy") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "gatling" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
 
--- Upthrow 邏輯
+local function findTheBatmanSkydiveRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("thebatman") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "skydive" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findHomelanderEagleStrikeRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("homelander") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "eaglestrike" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findMohawkMoveOneRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("mohawk") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "moveone" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
 local function findHomelanderThrowDownRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -645,87 +789,6 @@ local function findHomelanderThrowDownRemote()
 	end
 	return nil
 end
-
-UpthrowButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	local remote = findHomelanderThrowDownRemote()
-	if remote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do remote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					remote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			remote:FireServer()
-		end
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		task.wait(0.2)
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-	else
-		UpthrowButton.Text = "No Remote"
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		UpthrowButton.Text = "Upthrow"
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-	end
-end)
-
--- Overthrow 邏輯
-local function findVecnaOverheadThrowRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("vecna") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "overheadthrow" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-OverthrowButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	local remote = findVecnaOverheadThrowRemote()
-	if remote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do remote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					remote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			remote:FireServer()
-		end
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		task.wait(0.2)
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
-	else
-		OverthrowButton.Text = "No Remote"
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		OverthrowButton.Text = "Overthrow"
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
-	end
-end)
-
--- Flashstrike 邏輯
-local flashstrikeCooldown = 10
-local flashstrikeCooldownActive = false
 
 local function findTheFlashCwFinalRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
@@ -747,55 +810,6 @@ local function findTheFlashCwFinalRemote()
 	return nil
 end
 
-local function startFlashstrikeCooldown()
-	flashstrikeCooldownActive = true
-	FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
-	FlashstrikeButton.BackgroundTransparency = 0.5
-	FlashstrikeButton.Text = tostring(flashstrikeCooldown)
-	
-	task.spawn(function()
-		for i = flashstrikeCooldown, 1, -1 do
-			task.wait(1)
-			if not flashstrikeCooldownActive then break end
-			if i > 1 then
-				FlashstrikeButton.Text = tostring(i - 1)
-			end
-		end
-		flashstrikeCooldownActive = false
-		FlashstrikeButton.Text = "Flashstrike"
-		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
-		FlashstrikeButton.BackgroundTransparency = 0
-	end)
-end
-
-FlashstrikeButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	if flashstrikeCooldownActive then return end
-	local remote = findTheFlashCwFinalRemote()
-	if remote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do remote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					remote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			remote:FireServer()
-		end
-		startFlashstrikeCooldown()
-	else
-		FlashstrikeButton.Text = "No Remote"
-		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		FlashstrikeButton.Text = "Flashstrike"
-		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
-	end
-end)
-
--- Kick 邏輯
 local function findZodiacKickRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -856,47 +870,6 @@ local function findSpiderManWebBlossomRemote()
 	return nil
 end
 
-KickButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	local kickRemote = findZodiacKickRemote()
-	local shieldRemote = findSteveHShieldCounterRemote()
-	local webBlossomRemote = findSpiderManWebBlossomRemote()
-	
-	kickActive = true
-	
-	task.spawn(function()
-		while kickActive and webBlossomRemote do
-			webBlossomRemote:FireServer()
-			task.wait(0.1)
-		end
-	end)
-	
-	if shieldRemote then
-		shieldRemote:FireServer()
-	end
-	
-	task.wait(0.5)
-	
-	if kickRemote then
-		for i = 1, 40 do
-			kickRemote:FireServer()
-		end
-		kickActive = false
-		
-		KickButton.BackgroundColor3 = Color3.fromRGB(200, 50, 200)
-		task.wait(0.1)
-		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
-	else
-		kickActive = false
-		KickButton.Text = "No Kick"
-		KickButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		KickButton.Text = "One punch"
-		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
-	end
-end)
-
--- Combo 邏輯（Donut → Batman MoveOne + VibrateArm x40）
 local function findTheBatmanMoveOneRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -937,6 +910,621 @@ local function findTheFlashCwVibrateArmRemote()
 	return nil
 end
 
+local function findAmazoFinisherRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("amazo") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "finisher" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+-- ==================== View Tracking Aim System ====================
+local function getPlayerFromScreenCenter()
+	local camera = workspace.CurrentCamera
+	if not camera then return nil end
+
+	local viewportSize = camera.ViewportSize
+	local screenCenterX = viewportSize.X / 2
+	local detectionWidth = viewportSize.X / 4
+
+	local closestPlayer = nil
+	local closestDepth = math.huge
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local targetCharacter = player.Character
+			if targetCharacter then
+				local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+				if targetRoot then
+					local screenPos, onScreen = camera:WorldToScreenPoint(targetRoot.Position)
+					if onScreen then
+						local screenX = screenPos.X
+						if math.abs(screenX - screenCenterX) <= detectionWidth / 2 then
+							if screenPos.Z < closestDepth then
+								closestDepth = screenPos.Z
+								closestPlayer = player
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return closestPlayer
+end
+
+local function startAiming()
+	if aimActive then return end
+	
+	local targetPlayer = getPlayerFromScreenCenter()
+	if not targetPlayer then return end
+
+	aimActive = true
+	aimTarget = targetPlayer
+	MoAimButton.Text = "tp▶\n(Hold)"
+	MoAimButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+
+	local targetChar = targetPlayer.Character
+	if targetChar then
+		local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+		if targetRoot then
+			aimLine = Instance.new("Part")
+			aimLine.Size = Vector3.new(0.3, 10, 0.3)
+			aimLine.Color = Color3.fromRGB(255, 0, 0)
+			aimLine.Material = Enum.Material.Neon
+			aimLine.Anchored = true
+			aimLine.CanCollide = false
+			aimLine.Parent = workspace
+			aimLine.Position = targetRoot.Position + Vector3.new(0, 3, 0)
+
+			aimHighlight = Instance.new("Highlight")
+			aimHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+			aimHighlight.FillTransparency = 0.7
+			aimHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+			aimHighlight.OutlineTransparency = 0
+			aimHighlight.Parent = targetChar
+		end
+	end
+
+	if aimUpdateConnection then aimUpdateConnection:Disconnect() end
+	aimUpdateConnection = RunService.Heartbeat:Connect(function()
+		if not aimActive then return end
+		
+		local newTarget = getPlayerFromScreenCenter()
+		if newTarget and newTarget ~= aimTarget then
+			aimTarget = newTarget
+			
+			if aimHighlight then aimHighlight:Destroy() end
+			if aimLine then aimLine:Destroy() end
+			
+			local newChar = newTarget.Character
+			if newChar then
+				local newRoot = newChar:FindFirstChild("HumanoidRootPart")
+				if newRoot then
+					aimLine = Instance.new("Part")
+					aimLine.Size = Vector3.new(0.3, 10, 0.3)
+					aimLine.Color = Color3.fromRGB(255, 0, 0)
+					aimLine.Material = Enum.Material.Neon
+					aimLine.Anchored = true
+					aimLine.CanCollide = false
+					aimLine.Parent = workspace
+					aimLine.Position = newRoot.Position + Vector3.new(0, 3, 0)
+
+					aimHighlight = Instance.new("Highlight")
+					aimHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+					aimHighlight.FillTransparency = 0.7
+					aimHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+					aimHighlight.OutlineTransparency = 0
+					aimHighlight.Parent = newChar
+				end
+			end
+		end
+		
+		if aimLine and aimTarget then
+			local targetChar = aimTarget.Character
+			if targetChar then
+				local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+				if targetRoot then
+					aimLine.Position = targetRoot.Position + Vector3.new(0, 3, 0)
+				end
+			end
+		end
+	end)
+end
+
+local function stopAiming()
+	if aimActive and aimTarget then
+		local targetPlayer = aimTarget
+		local targetChar = targetPlayer.Character
+		local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+		
+		if targetRoot then
+			local myChar = LocalPlayer.Character
+			local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+			
+			if myRoot then
+				local targetLookVector = targetRoot.CFrame.LookVector
+				local behindPos = targetRoot.Position - targetLookVector * 3
+				behindPos = Vector3.new(behindPos.X, targetRoot.Position.Y + 1, behindPos.Z)
+				
+				myRoot.CFrame = CFrame.lookAt(behindPos, targetRoot.Position)
+				myRoot.Velocity = Vector3.new(0, 0, 0)
+				myRoot.RotVelocity = Vector3.new(0, 0, 0)
+				
+				local camera = workspace.CurrentCamera
+				if camera then
+					local lookAtPos = targetRoot.Position
+					local newCamCFrame = CFrame.lookAt(behindPos, lookAtPos)
+					camera.CFrame = newCamCFrame
+					
+					task.delay(0.1, function()
+						local head = myChar and myChar:FindFirstChild("Head")
+						if head and camera then
+							camera.CFrame = CFrame.lookAt(camera.CFrame.Position, head.Position)
+						end
+					end)
+				end
+			end
+		end
+	end
+	
+	aimActive = false
+	aimTarget = nil
+	MoAimButton.Text = "tp\n(Hold)"
+	MoAimButton.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
+
+	if aimUpdateConnection then
+		aimUpdateConnection:Disconnect()
+		aimUpdateConnection = nil
+	end
+
+	if aimLine then
+		aimLine:Destroy()
+		aimLine = nil
+	end
+	if aimHighlight then
+		aimHighlight:Destroy()
+		aimHighlight = nil
+	end
+end
+
+MoAimButton.InputBegan:Connect(function(input)
+	if moveUnlocked then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		startAiming()
+	end
+end)
+
+MoAimButton.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		stopAiming()
+	end
+end)
+
+-- ==================== Laser Logic ====================
+local function setLaserActive(active)
+	laserActive = active
+	if active then
+		local remote = findHomelanderMoveOneRemote()
+		if not remote then
+			laserActive = false
+			LaserButton.Text = "No Remote"
+			LaserButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			return
+		end
+		LaserButton.Text = "ON"
+		LaserButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+		laserThread = task.spawn(function()
+			while laserActive do
+				remote:FireServer()
+				task.wait()
+			end
+		end)
+	else
+		if laserThread then
+			task.cancel(laserThread)
+			laserThread = nil
+		end
+		LaserButton.Text = "Laser"
+		LaserButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+	end
+end
+
+LaserButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+	setLaserActive(not laserActive)
+end)
+
+-- ==================== Upthrow / Air slam Logic ====================
+UpthrowButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+	if upthrowCooldown then return end
+
+	if mohawkModActive then
+		-- ===== Mohawk mode: Air slam (full combo) =====
+		local remote = findHomelanderThrowDownRemote()
+		if not remote then
+			UpthrowButton.Text = "No Remote"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			task.wait(0.5)
+			UpthrowButton.Text = "Air slam"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			return
+		end
+
+		local targetPlayer = findClosestPlayer(4)
+		if not targetPlayer then
+			UpthrowButton.Text = "No Target"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			task.wait(0.5)
+			UpthrowButton.Text = "Air slam"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			return
+		end
+
+		upthrowCooldown = true
+		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+		UpthrowButton.BackgroundTransparency = 0.5
+		UpthrowButton.Text = "2"
+		task.delay(1, function() UpthrowButton.Text = "1" end)
+		task.delay(2, function()
+			upthrowCooldown = false
+			UpthrowButton.Text = "Air slam"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			UpthrowButton.BackgroundTransparency = 0
+		end)
+
+		local targetCharacter = targetPlayer.Character
+		local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+		if not targetRoot then
+			UpthrowButton.Text = "No Target"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			UpthrowButton.BackgroundTransparency = 0
+			upthrowCooldown = false
+			task.wait(0.5)
+			UpthrowButton.Text = "Air slam"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			return
+		end
+
+		local myCharacter = LocalPlayer.Character
+		local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+		if not myRoot then return end
+
+		local lookVector = targetRoot.CFrame.LookVector
+		local horizontalDir = Vector3.new(lookVector.X, 0, lookVector.Z)
+		if horizontalDir.Magnitude < 0.01 then horizontalDir = Vector3.new(1,0,0) else horizontalDir = horizontalDir.Unit end
+		local targetPos = targetRoot.Position + horizontalDir * 2.5
+		targetPos = Vector3.new(targetPos.X, targetRoot.Position.Y + 3, targetPos.Z)
+		myRoot.CFrame = CFrame.lookAt(targetPos, targetRoot.Position)
+		myRoot.Velocity = Vector3.new(0,0,0)
+		myRoot.RotVelocity = Vector3.new(0,0,0)
+
+		local humanoid = myCharacter:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.WalkSpeed = 0
+			humanoid.JumpPower = 0
+			humanoid.AutoRotate = false
+		end
+
+		if simultaneousEnabled then
+			for i = 1, simultaneousCount do remote:FireServer() end
+		elseif loopInterval > 0 then
+			task.spawn(function()
+				while loopInterval > 0 do
+					remote:FireServer()
+					task.wait(loopInterval)
+				end
+			end)
+		else
+			remote:FireServer()
+		end
+
+		task.delay(0.9, function()
+			local skydiveRemote = findTheBatmanSkydiveRemote()
+			if skydiveRemote then skydiveRemote:FireServer() end
+			local eagleRemote = findHomelanderEagleStrikeRemote()
+			if eagleRemote then eagleRemote:FireServer() end
+		end)
+
+		local tpDelay = 0.9
+		local gatlingDelay = 0.8
+		local mohawkDelay = 2.05
+
+		local bodyVel = nil
+		local bodyGyro = nil
+		local freezeConnection = nil
+		local isCleanedUp = false
+
+		local function cleanup()
+			if isCleanedUp then return end
+			isCleanedUp = true
+			if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
+			if bodyVel then bodyVel:Destroy() bodyVel = nil end
+			if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+			local currentChar = LocalPlayer.Character
+			local currentHumanoid = currentChar and currentChar:FindFirstChildOfClass("Humanoid")
+			if currentHumanoid then
+				currentHumanoid.WalkSpeed = 16
+				currentHumanoid.JumpPower = 50
+				currentHumanoid.AutoRotate = true
+			end
+			local currentRoot = currentChar and currentChar:FindFirstChild("HumanoidRootPart")
+			if currentRoot then
+				currentRoot.Velocity = Vector3.new(0, 0, 0)
+				currentRoot.RotVelocity = Vector3.new(0, 0, 0)
+			end
+		end
+
+		task.delay(tpDelay, function()
+			local lockActive = true
+			local myCharacter2 = LocalPlayer.Character
+			local myRoot2 = myCharacter2 and myCharacter2:FindFirstChild("HumanoidRootPart")
+			if not myRoot2 then cleanup() return end
+
+			local humanoid2 = myCharacter2:FindFirstChildOfClass("Humanoid")
+			if humanoid2 then
+				humanoid2.WalkSpeed = 0
+				humanoid2.JumpPower = 0
+				humanoid2.AutoRotate = false
+			end
+
+			local newStartX = myRoot2.Position.X
+			local newStartZ = myRoot2.Position.Z
+
+			bodyVel = Instance.new("BodyVelocity")
+			bodyVel.MaxForce = Vector3.new(0, math.huge, 0)
+			bodyVel.Velocity = Vector3.new(0, 80, 0)
+			bodyVel.Parent = myRoot2
+
+			bodyGyro = Instance.new("BodyGyro")
+			bodyGyro.MaxTorque = Vector3.new(0, math.huge, 0)
+			bodyGyro.CFrame = myRoot2.CFrame
+			bodyGyro.Parent = myRoot2
+
+			freezeConnection = RunService.Heartbeat:Connect(function()
+				if not lockActive then
+					freezeConnection:Disconnect()
+					return
+				end
+				if myRoot2 and myRoot2.Parent then
+					myRoot2.Position = Vector3.new(newStartX, myRoot2.Position.Y, newStartZ)
+					myRoot2.Velocity = Vector3.new(0, myRoot2.Velocity.Y, 0)
+					myRoot2.RotVelocity = Vector3.new(0, 0, 0)
+				end
+			end)
+
+			task.delay(gatlingDelay + mohawkDelay, function()
+				lockActive = false
+				if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
+				if bodyVel then bodyVel:Destroy() bodyVel = nil end
+				if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+
+				local targetRoot2 = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+				local myRoot3 = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				if targetRoot2 and myRoot3 then
+					local lookVector2 = targetRoot2.CFrame.LookVector
+					local horizontalDir2 = Vector3.new(lookVector2.X, 0, lookVector2.Z)
+					if horizontalDir2.Magnitude < 0.01 then horizontalDir2 = Vector3.new(1,0,0) else horizontalDir2 = horizontalDir2.Unit end
+					local targetPos2 = targetRoot2.Position + horizontalDir2 * 2.5
+					targetPos2 = Vector3.new(targetPos2.X, targetRoot2.Position.Y + 3, targetPos2.Z)
+					myRoot3.CFrame = CFrame.lookAt(targetPos2, targetRoot2.Position)
+					myRoot3.Velocity = Vector3.new(0,0,0)
+					myRoot3.RotVelocity = Vector3.new(0,0,0)
+				end
+
+				local mohawkRemote = findMohawkMoveOneRemote()
+				if mohawkRemote then
+					for i = 1, 8 do
+						mohawkRemote:FireServer()
+					end
+				end
+
+				task.delay(0.5, function()
+					cleanup()
+				end)
+			end)
+
+			task.delay(gatlingDelay, function()
+				lockActive = false
+				if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
+				if bodyVel then bodyVel:Destroy() bodyVel = nil end
+				if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+
+				local targetRootTP = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+				local myRootTP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				if targetRootTP and myRootTP then
+					local lookVectorTP = targetRootTP.CFrame.LookVector
+					local horizontalDirTP = Vector3.new(lookVectorTP.X, 0, lookVectorTP.Z)
+					if horizontalDirTP.Magnitude < 0.01 then horizontalDirTP = Vector3.new(1,0,0) else horizontalDirTP = horizontalDirTP.Unit end
+					local targetPosTP = targetRootTP.Position + horizontalDirTP * 2.5
+					targetPosTP = Vector3.new(targetPosTP.X, targetRootTP.Position.Y + 3, targetPosTP.Z)
+					myRootTP.CFrame = CFrame.lookAt(targetPosTP, targetRootTP.Position)
+					myRootTP.Velocity = Vector3.new(0,0,0)
+					myRootTP.RotVelocity = Vector3.new(0,0,0)
+				end
+
+				local gatlingRemote = findLuffyGatlingRemote()
+				if gatlingRemote then
+					gatlingRemote:FireServer()
+				end
+
+				local trackActive = true
+				task.spawn(function()
+					while trackActive do
+						local targetRootTrack = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+						local myRootTrack = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+						if targetRootTrack and myRootTrack then
+							local lookVectorTrack = targetRootTrack.CFrame.LookVector
+							local horizontalDirTrack = Vector3.new(lookVectorTrack.X, 0, lookVectorTrack.Z)
+							if horizontalDirTrack.Magnitude < 0.01 then horizontalDirTrack = Vector3.new(1,0,0) else horizontalDirTrack = horizontalDirTrack.Unit end
+							local targetPosTrack = targetRootTrack.Position + horizontalDirTrack * 2.5
+							targetPosTrack = Vector3.new(targetPosTrack.X, targetRootTrack.Position.Y + 1.5, targetPosTrack.Z)
+							myRootTrack.CFrame = CFrame.lookAt(targetPosTrack, targetRootTrack.Position)
+							myRootTrack.Velocity = Vector3.new(0,0,0)
+							myRootTrack.RotVelocity = Vector3.new(0,0,0)
+						end
+						task.wait(0.03)
+					end
+				end)
+
+				task.delay(0.7, function()
+					trackActive = false
+				end)
+
+				if humanoid2 then
+					humanoid2.WalkSpeed = 16
+					humanoid2.JumpPower = 50
+					humanoid2.AutoRotate = true
+				end
+			end)
+		end)
+
+		task.delay(tpDelay + gatlingDelay + mohawkDelay + 1, function()
+			cleanup()
+		end)
+
+	else
+		-- ===== Homelanders mode: Upthrow (only 1x ThrowDown) =====
+		local remote = findHomelanderThrowDownRemote()
+		if not remote then
+			UpthrowButton.Text = "No Remote"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			task.wait(0.5)
+			UpthrowButton.Text = "Upthrow"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			return
+		end
+
+		local targetPlayer = findClosestPlayer(4)
+		if not targetPlayer then
+			UpthrowButton.Text = "No Target"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			task.wait(0.5)
+			UpthrowButton.Text = "Upthrow"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			return
+		end
+
+		upthrowCooldown = true
+		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+		UpthrowButton.BackgroundTransparency = 0.5
+		UpthrowButton.Text = "2"
+		task.delay(1, function() UpthrowButton.Text = "1" end)
+		task.delay(2, function()
+			upthrowCooldown = false
+			UpthrowButton.Text = "Upthrow"
+			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+			UpthrowButton.BackgroundTransparency = 0
+		end)
+
+		remote:FireServer()
+	end
+end)
+
+-- ==================== Flashstrike Logic ====================
+local function startFlashstrikeCooldown()
+	flashstrikeCooldownActive = true
+	FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+	FlashstrikeButton.BackgroundTransparency = 0.5
+	FlashstrikeButton.Text = tostring(flashstrikeCooldown)
+	
+	task.spawn(function()
+		for i = flashstrikeCooldown, 1, -1 do
+			task.wait(1)
+			if not flashstrikeCooldownActive then break end
+			if i > 1 then
+				FlashstrikeButton.Text = tostring(i - 1)
+			end
+		end
+		flashstrikeCooldownActive = false
+		FlashstrikeButton.Text = "Flashstrike"
+		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
+		FlashstrikeButton.BackgroundTransparency = 0
+	end)
+end
+
+FlashstrikeButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+	if flashstrikeCooldownActive then return end
+	local remote = findTheFlashCwFinalRemote()
+	if remote then
+		if simultaneousEnabled then
+			for i = 1, simultaneousCount do remote:FireServer() end
+		elseif loopInterval > 0 then
+			task.spawn(function()
+				while loopInterval > 0 do
+					remote:FireServer()
+					task.wait(loopInterval)
+				end
+			end)
+		else
+			remote:FireServer()
+		end
+		startFlashstrikeCooldown()
+	else
+		FlashstrikeButton.Text = "No Remote"
+		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		task.wait(0.5)
+		FlashstrikeButton.Text = "Flashstrike"
+		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
+	end
+end)
+
+-- ==================== Kick Logic ====================
+KickButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+	local kickRemote = findZodiacKickRemote()
+	local shieldRemote = findSteveHShieldCounterRemote()
+	local webBlossomRemote = findSpiderManWebBlossomRemote()
+	
+	kickActive = true
+	
+	task.spawn(function()
+		while kickActive and webBlossomRemote do
+			webBlossomRemote:FireServer()
+			task.wait(0.1)
+		end
+	end)
+	
+	if shieldRemote then
+		shieldRemote:FireServer()
+	end
+	
+	task.wait(0.5)
+	
+	if kickRemote then
+		for i = 1, 40 do
+			kickRemote:FireServer()
+		end
+		kickActive = false
+		
+		KickButton.BackgroundColor3 = Color3.fromRGB(200, 50, 200)
+		task.wait(0.1)
+		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
+	else
+		kickActive = false
+		KickButton.Text = "No Kick"
+		KickButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		task.wait(0.5)
+		KickButton.Text = "One punch"
+		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
+	end
+end)
+
+-- ==================== Combo Logic ====================
 ComboButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	
@@ -959,7 +1547,7 @@ ComboButton.MouseButton1Click:Connect(function()
 	ComboButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 end)
 
--- Homelander Fly
+-- ==================== Homelander Fly ====================
 FlightToggleBtn.MouseButton1Click:Connect(function()
 	if flightTask then return end
 	flightTask = task.spawn(function()
@@ -969,7 +1557,7 @@ FlightToggleBtn.MouseButton1Click:Connect(function()
 	FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 end)
 
--- Move Skills Mode
+-- ==================== Move Skills Mode ====================
 local function updateMoveModeButton()
 	if moveUnlocked then
 		MoveModeBtn.Text = "Move Skills Mode: Unlocked"
@@ -992,176 +1580,45 @@ updateMoveModeButton()
 ResetPosBtn.MouseButton1Click:Connect(function()
 	LaserButton.Position = DEFAULT_POSITIONS.Laser
 	UpthrowButton.Position = DEFAULT_POSITIONS.Upthrow
-	OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
 	FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
 	KickButton.Position = DEFAULT_POSITIONS.Kick
 	ComboButton.Position = DEFAULT_POSITIONS.Combo
+	MoAimButton.Position = DEFAULT_POSITIONS.MoAim
 end)
 
--- 拖動邏輯
-local laserDragging = false
-local laserDragStart, laserStartPos
-
-LaserButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		laserDragging = true
-		laserDragStart = input.Position
-		laserStartPos = LaserButton.Position
-	end
-end)
-
-local upthrowDragging = false
-local upthrowDragStart, upthrowStartPos
-
-UpthrowButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		upthrowDragging = true
-		upthrowDragStart = input.Position
-		upthrowStartPos = UpthrowButton.Position
-	end
-end)
-
-local overthrowDragging = false
-local overthrowDragStart, overthrowStartPos
-
-OverthrowButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		overthrowDragging = true
-		overthrowDragStart = input.Position
-		overthrowStartPos = OverthrowButton.Position
-	end
-end)
-
-local flashstrikeDragging = false
-local flashstrikeDragStart, flashstrikeStartPos
-
-FlashstrikeButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		flashstrikeDragging = true
-		flashstrikeDragStart = input.Position
-		flashstrikeStartPos = FlashstrikeButton.Position
-	end
-end)
-
-local kickDragging = false
-local kickDragStart, kickStartPos
-
-KickButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		kickDragging = true
-		kickDragStart = input.Position
-		kickStartPos = KickButton.Position
-	end
-end)
-
-local comboDragging = false
-local comboDragStart, comboStartPos
-
-ComboButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		comboDragging = true
-		comboDragStart = input.Position
-		comboStartPos = ComboButton.Position
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		laserDragging = false
-		upthrowDragging = false
-		overthrowDragging = false
-		flashstrikeDragging = false
-		kickDragging = false
-		comboDragging = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if laserDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - laserDragStart
-		LaserButton.Position = UDim2.new(
-			laserStartPos.X.Scale,
-			laserStartPos.X.Offset + delta.X,
-			laserStartPos.Y.Scale,
-			laserStartPos.Y.Offset + delta.Y
-		)
-	end
-	if upthrowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - upthrowDragStart
-		UpthrowButton.Position = UDim2.new(
-			upthrowStartPos.X.Scale,
-			upthrowStartPos.X.Offset + delta.X,
-			upthrowStartPos.Y.Scale,
-			upthrowStartPos.Y.Offset + delta.Y
-		)
-	end
-	if overthrowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - overthrowDragStart
-		OverthrowButton.Position = UDim2.new(
-			overthrowStartPos.X.Scale,
-			overthrowStartPos.X.Offset + delta.X,
-			overthrowStartPos.Y.Scale,
-			overthrowStartPos.Y.Offset + delta.Y
-		)
-	end
-	if flashstrikeDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - flashstrikeDragStart
-		FlashstrikeButton.Position = UDim2.new(
-			flashstrikeStartPos.X.Scale,
-			flashstrikeStartPos.X.Offset + delta.X,
-			flashstrikeStartPos.Y.Scale,
-			flashstrikeStartPos.Y.Offset + delta.Y
-		)
-	end
-	if kickDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - kickDragStart
-		KickButton.Position = UDim2.new(
-			kickStartPos.X.Scale,
-			kickStartPos.X.Offset + delta.X,
-			kickStartPos.Y.Scale,
-			kickStartPos.Y.Offset + delta.Y
-		)
-	end
-	if comboDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - comboDragStart
-		ComboButton.Position = UDim2.new(
-			comboStartPos.X.Scale,
-			comboStartPos.X.Offset + delta.X,
-			comboStartPos.Y.Scale,
-			comboStartPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
--- Homelanders Mod
-local homelanderModActive = false
-
-local function findAmazoFinisherRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("amazo") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "finisher" then
-							return remote
-						end
-					end
-				end
-			end
+-- ==================== Drag Logic for Floating Buttons ====================
+local function setupDrag(button)
+	local dragging = false
+	local dragStart, startPos
+	button.InputBegan:Connect(function(input)
+		if not moveUnlocked then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = button.Position
 		end
-	end
-	return nil
+	end)
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
 end
 
+setupDrag(LaserButton)
+setupDrag(UpthrowButton)
+setupDrag(FlashstrikeButton)
+setupDrag(KickButton)
+setupDrag(ComboButton)
+setupDrag(MoAimButton)
+
+-- ==================== Homelanders Mod / Mohawk mode mutual exclusion ====================
 local function startFinisherLoop()
 	if finisherActive then return end
 	local remote = findAmazoFinisherRemote()
@@ -1180,6 +1637,34 @@ local function stopFinisherLoop()
 	if finisherLoopThread then
 		task.cancel(finisherLoopThread)
 		finisherLoopThread = nil
+	end
+end
+
+local function updateAllButtonsVisibility()
+	if homelanderModActive then
+		LaserButton.Visible = true
+		UpthrowButton.Visible = true
+		FlashstrikeButton.Visible = true
+		KickButton.Visible = true
+		ComboButton.Visible = true
+		MoAimButton.Visible = false
+		UpthrowButton.Text = "Upthrow"
+	elseif mohawkModActive then
+		LaserButton.Visible = false
+		UpthrowButton.Visible = true
+		FlashstrikeButton.Visible = true
+		KickButton.Visible = true
+		ComboButton.Visible = true
+		MoAimButton.Visible = true
+		UpthrowButton.Text = "Air slam"
+	else
+		LaserButton.Visible = false
+		UpthrowButton.Visible = false
+		FlashstrikeButton.Visible = false
+		KickButton.Visible = false
+		ComboButton.Visible = false
+		MoAimButton.Visible = false
+		UpthrowButton.Text = "Upthrow"
 	end
 end
 
@@ -1205,15 +1690,36 @@ local function updateHomelanderModButton()
 	end
 end
 
+local function updateMohawkModButton()
+	if mohawkModActive then
+		MohawkModBtn.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+		TestLabel.Text = "TEST"
+		ModeLabel.Text = "Mohawk mode ON"
+	else
+		MohawkModBtn.BackgroundColor3 = Color3.fromRGB(70, 50, 30)
+		TestLabel.Text = "TEST"
+		ModeLabel.Text = "Mohawk mode"
+	end
+end
+
 HomelanderModBtn.MouseButton1Click:Connect(function()
 	homelanderModActive = not homelanderModActive
-	LaserButton.Visible = homelanderModActive
-	UpthrowButton.Visible = homelanderModActive
-	OverthrowButton.Visible = homelanderModActive
-	FlashstrikeButton.Visible = homelanderModActive
-	KickButton.Visible = homelanderModActive
-	ComboButton.Visible = homelanderModActive
+	if homelanderModActive and mohawkModActive then
+		mohawkModActive = false
+		updateMohawkModButton()
+	end
 	updateHomelanderModButton()
+	updateAllButtonsVisibility()
+end)
+
+MohawkModBtn.MouseButton1Click:Connect(function()
+	mohawkModActive = not mohawkModActive
+	if mohawkModActive and homelanderModActive then
+		homelanderModActive = false
+		updateHomelanderModButton()
+	end
+	updateMohawkModButton()
+	updateAllButtonsVisibility()
 end)
 
 FinisherButton.MouseButton1Click:Connect(function()
@@ -1230,8 +1736,10 @@ FinisherButton.MouseButton1Click:Connect(function()
 end)
 
 updateHomelanderModButton()
+updateMohawkModButton()
+updateAllButtonsVisibility()
 
--- UI Scale 滑條邏輯
+-- ==================== UI Scale Slider ====================
 local minScale = 0.5 local maxScale = 1.5 local currentScale = uiScale.Scale
 local function UpdateFromScale(scale)
 	currentScale = math.clamp(scale, minScale, maxScale) uiScale.Scale = currentScale
@@ -1272,13 +1780,14 @@ SliderThumb.InputBegan:Connect(StartSliderDrag)
 UIS.InputEnded:Connect(StopSliderDrag)
 UIS.InputChanged:Connect(DragSlider)
 
--- Cancel Script
+-- ==================== Cancel Script ====================
 local function CancelScript()
 	loopInterval = 0
 	isCustomLoopActive = false
 	simultaneousEnabled = false
 	kickActive = false
 	stopFinisherLoop()
+	stopAiming()
 	if currentLoopThread then
 		task.cancel(currentLoopThread)
 		currentLoopThread = nil
@@ -1289,13 +1798,14 @@ local function CancelScript()
 	end
 	laserActive = false
 	flashstrikeCooldownActive = false
+	upthrowCooldown = false
 	ScreenGui:Destroy()
 	FloatingGui:Destroy()
 end
 
 CancelScriptBtn.MouseButton1Click:Connect(CancelScript)
 
--- 主菜單拖動與鎖定
+-- ==================== Main Window Drag & Lock ====================
 local isWindowLocked = true
 local function UpdateLockVisuals()
 	if isWindowLocked then LockButtonTop.Text = "🔒" LockButtonTop.TextColor3 = Color3.fromRGB(255,80,80)
@@ -1322,10 +1832,7 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Loop 邏輯
-local currentLoopThread = nil
-
--- 刷新技能列表
+-- ==================== Refresh Skill List ====================
 local function Refresh()
 	for _, child in ipairs(Scroll:GetChildren()) do
 		if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
@@ -1395,4 +1902,10 @@ end
 LocalPlayer.CharacterAdded:Connect(function(newChar) Character = newChar task.wait(1) AutoDetectCharacter() end)
 SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
-AutoDetectCharacter() Refresh() 
+AutoDetectCharacter() Refresh()
+
+print("✅ Full script loaded!")
+print("🎯 tp: Hold tp(Hold) → rotate view to switch target → release = teleport behind target + 0.1s visual focus")
+print("🔥 Upthrow: Homelanders mode = 1x ThrowDown | Mohawk mode = Air slam (full combo)")
+print("🔥 Skills: Laser / Flashstrike / One punch / Donut")
+print("🛡️ God Mode / Reset / Homelanders Mod / Mohawk mode / Fly - all intact")
