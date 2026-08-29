@@ -434,25 +434,25 @@ ModeLabel.TextXAlignment = Enum.TextXAlignment.Right
 ModeLabel.TextYAlignment = Enum.TextYAlignment.Bottom
 ModeLabel.Parent = MohawkModBtn
 
--- ====== Modified Hint text (two lines) ======
+-- ====== Hint text (single line, tiny font) ======
 local HintLabel = Instance.new("TextLabel")
 HintLabel.Name = "HintLabel"
-HintLabel.Size = UDim2.new(1, -10, 0, 20)  -- increased height
+HintLabel.Size = UDim2.new(1, -10, 0, 32)
 HintLabel.Position = UDim2.new(0, 5, 0, 86)
 HintLabel.BackgroundTransparency = 1
-HintLabel.TextColor3 = Color3.fromRGB(255, 255, 0)  -- Yellow
+HintLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
 HintLabel.Font = Enum.Font.Gotham
-HintLabel.TextSize = 8
-HintLabel.Text = "Warehouse: Air slam\nless effective with ceiling"  -- two lines
+HintLabel.TextSize = 6
+HintLabel.Text = "(If on the Warehouse map:\nAir slam don't work well\nbecause of the ceiling.)"
 HintLabel.TextXAlignment = Enum.TextXAlignment.Left
 HintLabel.TextYAlignment = Enum.TextYAlignment.Top
 HintLabel.TextWrapped = true
 HintLabel.Parent = Page2
 
--- ==================== Move Mode & Reset Pos (shifted down further) ====================
+-- ==================== Move Mode & Reset Pos ====================
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 110)  -- was 104, now 110
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 122)
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
@@ -464,7 +464,7 @@ local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UD
 
 local ResetPosBtn = Instance.new("TextButton")
 ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
-ResetPosBtn.Position = UDim2.new(0, 5, 0, 132)  -- was 126, now 132
+ResetPosBtn.Position = UDim2.new(0, 5, 0, 144)
 ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResetPosBtn.Font = Enum.Font.GothamBold
@@ -476,7 +476,7 @@ local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UD
 
 local FlightToggleBtn = Instance.new("TextButton")
 FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
-FlightToggleBtn.Position = UDim2.new(0, 5, 0, 156)  -- was 150, now 156
+FlightToggleBtn.Position = UDim2.new(0, 5, 0, 168)
 FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 100, 100)
 FlightToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlightToggleBtn.Font = Enum.Font.GothamBold
@@ -488,7 +488,7 @@ local FlightToggleCorner = Instance.new("UICorner") FlightToggleCorner.CornerRad
 
 local FlightLoadLabel = Instance.new("TextLabel")
 FlightLoadLabel.Size = UDim2.new(1, -10, 0, 16)
-FlightLoadLabel.Position = UDim2.new(0, 5, 0, 178)  -- was 172, now 178
+FlightLoadLabel.Position = UDim2.new(0, 5, 0, 178)
 FlightLoadLabel.BackgroundTransparency = 1
 FlightLoadLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 FlightLoadLabel.Font = Enum.Font.Gotham
@@ -499,7 +499,7 @@ FlightLoadLabel.Parent = Page2
 
 local SettingsFoldBtn = Instance.new("TextButton")
 SettingsFoldBtn.Size = UDim2.new(1, -10, 0, 24)
-SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 196)  -- was 190, now 196
+SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 196)
 SettingsFoldBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 SettingsFoldBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SettingsFoldBtn.Font = Enum.Font.GothamBold
@@ -510,7 +510,7 @@ local SettingsFoldCorner = Instance.new("UICorner") SettingsFoldCorner.CornerRad
 
 local SettingsContent = Instance.new("Frame")
 SettingsContent.Size = UDim2.new(1, -10, 0, 110)
-SettingsContent.Position = UDim2.new(0, 5, 0, 222)  -- was 216, now 222
+SettingsContent.Position = UDim2.new(0, 5, 0, 222)
 SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
