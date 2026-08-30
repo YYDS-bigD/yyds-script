@@ -1147,13 +1147,14 @@ LaserButton.MouseButton1Click:Connect(function()
 	setLaserActive(not laserActive)
 end)
 
--- ==================== Upthrow / Air slam Logic ====================
+-- ==================== Upthrow / Air slam Logic (MODIFIED: Homelanders no cooldown, Mohawk keeps cooldown) ====================
 UpthrowButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
-	if upthrowCooldown then return end
 
 	if mohawkModActive then
-		-- ===== Mohawk mode: Air slam (full combo) =====
+		-- ===== Mohawk mode: Air slam (full combo) - retains 2s cooldown =====
+		if upthrowCooldown then return end
+
 		local remote = findHomelanderThrowDownRemote()
 		if not remote then
 			UpthrowButton.Text = "No Remote"
@@ -1174,6 +1175,7 @@ UpthrowButton.MouseButton1Click:Connect(function()
 			return
 		end
 
+		-- Cooldown start
 		upthrowCooldown = true
 		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 		UpthrowButton.BackgroundTransparency = 0.5
@@ -1397,7 +1399,7 @@ UpthrowButton.MouseButton1Click:Connect(function()
 		end)
 
 	else
-		-- ===== Homelanders mode: Upthrow (only 1x ThrowDown) =====
+		-- ===== Homelanders mode: Upthrow - NO COOLDOWN =====
 		local remote = findHomelanderThrowDownRemote()
 		if not remote then
 			UpthrowButton.Text = "No Remote"
@@ -1418,18 +1420,7 @@ UpthrowButton.MouseButton1Click:Connect(function()
 			return
 		end
 
-		upthrowCooldown = true
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		UpthrowButton.BackgroundTransparency = 0.5
-		UpthrowButton.Text = "2"
-		task.delay(1, function() UpthrowButton.Text = "1" end)
-		task.delay(2, function()
-			upthrowCooldown = false
-			UpthrowButton.Text = "Upthrow"
-			UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-			UpthrowButton.BackgroundTransparency = 0
-		end)
-
+		-- No cooldown, fire immediately
 		remote:FireServer()
 	end
 end)
@@ -1906,6 +1897,6 @@ AutoDetectCharacter() Refresh()
 
 print("✅ Full script loaded!")
 print("🎯 tp: Hold tp(Hold) → rotate view to switch target → release = teleport behind target + 0.1s visual focus")
-print("🔥 Upthrow: Homelanders mode = 1x ThrowDown | Mohawk mode = Air slam (full combo)")
+print("🔥 Upthrow: Homelanders mode = NO cooldown | Mohawk mode = 2s cooldown (full combo)")
 print("🔥 Skills: Laser / Flashstrike / One punch / Donut")
 print("🛡️ God Mode / Reset / Homelanders Mod / Mohawk mode / Fly - all intact")
