@@ -35,7 +35,7 @@ local finisherActive = false         -- 循环是否正在运行
 -- Kill All 相关
 local killAllActive = false
 local killAllTeleportThread = nil
-local KILLALL_OFFSET = 4  -- 固定距离 4 studs
+local KILLALL_OFFSET = 3  -- 固定距离 3 studs
 
 local DEFAULT_POSITIONS = {
 	Laser = UDim2.new(1, -240, 0.5, -100), -- 与 Flashstrike 保持 10 像素间隙
@@ -1278,7 +1278,7 @@ local function doKillAll()
 	KillAllBtn.Text = "Killing..."
 	KillAllBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 
-	-- 開始持續把人鎖在面前 4 studs，同時立刻開始攻擊
+	-- 開始持續把人鎖在面前 3 studs，同時立刻開始攻擊
 	startKillAllTeleport()
 
 	-- 從一開始到 2 秒結束，每隔 0.1 秒同時執行 20 次 Stab2
