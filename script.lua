@@ -1140,9 +1140,9 @@ local function executeAimAction()
 			end
 		end
 
-		-- ★ bbb 關鍵邏輯：到達目標（距離 < 0.5）立即停止，沒有自由移動
+		-- ★ 到達目標（距離 < 1）立即停止
 		local distance = (rootPart.Position - targetRoot.Position).Magnitude
-		if distance < 0.5 then
+		if distance < 1 then
 			executionCanceled = true
 		end
 	end)
