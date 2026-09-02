@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- 清理舊 GUI
+-- Clean up old GUIs
 local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubScannerV7")
 if oldGui then oldGui:Destroy() end
 local oldLaserGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubLaserButton")
@@ -20,30 +20,51 @@ local oldKickGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHu
 if oldKickGui then oldKickGui:Destroy() end
 local oldComboGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubComboButton")
 if oldComboGui then oldComboGui:Destroy() end
+local oldFloating = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubFloatingButtons")
+if oldFloating then oldFloating:Destroy() end
 
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Root = Character:WaitForChild("HumanoidRootPart")
 
 local flightTask = nil
-local kickActive = false -- 用于控制 WebBlossom 循环
+local kickActive = false
 
--- 新增 Finisher 相关变量
-local finisherEnabled = false         -- 默认关闭
-local finisherLoopThread = nil       -- 循环线程
-local finisherActive = false         -- 循环是否正在运行
+-- Finisher
+local finisherEnabled = false
+local finisherLoopThread = nil
+local finisherActive = false
 
--- Kill All 相关
+-- Kill All
 local killAllActive = false
 local killAllTeleportThread = nil
-local KILLALL_OFFSET = 3  -- 固定距离 3 studs
+local KILLALL_OFFSET = 3
+
+-- A-Train / Aim
+local aTrainModActive = false
+local aimActive = false
+local aimTarget = nil
+local aimLine = nil
+local aimHighlight = nil
+local aimUpdateConnection = nil
+
+local aimModeActive = false
+local cancelButton = nil
+local AIM_EXECUTE_REMOTE_NAME = "MoveOne"
+
+-- Execution state
+local isExecuting = false
+local executionCanceled = false
+local executionFlashThread = nil
+local executionConnection = nil
 
 local DEFAULT_POSITIONS = {
-	Laser = UDim2.new(1, -240, 0.5, -100), -- 与 Flashstrike 保持 10 像素间隙
+	Laser = UDim2.new(1, -240, 0.5, -100),
 	Upthrow = UDim2.new(1, -310, 0.5, -30),
 	Overthrow = UDim2.new(1, -310, 0.5, 40),
-	Flashstrike = UDim2.new(1, -310, 0.5, -100), -- 下移10，与Upthrow间距70
-	Kick = UDim2.new(1, -240, 0.5, -170),      -- 跟随Donut右边，X = -240
-	Combo = UDim2.new(1, -310, 0.5, -170)      -- 与Flashstrike垂直对齐
+	Flashstrike = UDim2.new(1, -310, 0.5, -100),
+	Kick = UDim2.new(1, -240, 0.5, -170),
+	Combo = UDim2.new(1, -310, 0.5, -170),
+	MoAim = UDim2.new(1, -310, 0.5, -30)
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -135,7 +156,7 @@ Tab2.MouseButton1Click:Connect(function()
 	Tab1.BackgroundColor3 = Color3.fromRGB(35,35,35) Tab1.TextColor3 = Color3.fromRGB(180,180,180)
 end)
 
--- ==================== 第一頁 Scanner ====================
+-- ==================== Page 1 - Scanner ====================
 local SearchBox = Instance.new("TextBox")
 SearchBox.Size = UDim2.new(1,-10,0,22) SearchBox.Position = UDim2.new(0,5,0,3) SearchBox.BackgroundColor3 = Color3.fromRGB(28,28,28)
 SearchBox.TextColor3 = Color3.fromRGB(240,240,240) SearchBox.PlaceholderText = "Search..." SearchBox.Text = "" SearchBox.Font = Enum.Font.Gotham SearchBox.TextSize = 11 SearchBox.ClearTextOnFocus = false SearchBox.Parent = Page1
@@ -184,13 +205,12 @@ GodModeBtn.MouseButton1Click:Connect(function()
 	end)
 end)
 
--- ==================== 控制器定义（互斥） ====================
+-- ==================== Controllers ====================
 local simultaneousEnabled = false
 local simultaneousCount = 20
 local isCustomLoopActive = false
 local loopInterval = 0
 
--- 创建 Simultaneous 控制器
 local SimultaneousContainer = Instance.new("Frame")
 SimultaneousContainer.Size = UDim2.new(1,-10,0,22)
 SimultaneousContainer.Position = UDim2.new(0,5,0,49)
@@ -223,7 +243,6 @@ SimultaneousAddBtn.Size = UDim2.new(0,16,0,16) SimultaneousAddBtn.Position = UDi
 SimultaneousAddBtn.TextColor3 = Color3.fromRGB(220,220,220) SimultaneousAddBtn.Font = Enum.Font.GothamBold SimultaneousAddBtn.TextSize = 12 SimultaneousAddBtn.Text = "+" SimultaneousAddBtn.Parent = SimultaneousContainer
 local SimultaneousAddCorner = Instance.new("UICorner") SimultaneousAddCorner.CornerRadius = UDim.new(0,3) SimultaneousAddCorner.Parent = SimultaneousAddBtn
 
--- 创建 Custom Loop 控制器
 local CustomLoopContainer = Instance.new("Frame")
 CustomLoopContainer.Size = UDim2.new(1,-10,0,22)
 CustomLoopContainer.Position = UDim2.new(0,5,0,73)
@@ -343,7 +362,7 @@ Scroll.BackgroundTransparency = 1
 Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
--- ==================== 第二頁 Extras ====================
+-- ==================== Page 2 - Extras (簡潔排版) ====================
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -380,9 +399,46 @@ LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
 LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
 LaserCompatibilityLabel.Parent = Page2
 
+-- ★ TEST 標籤（獨立，淡黃色，大寫）
+local TestLabel = Instance.new("TextLabel")
+TestLabel.Size = UDim2.new(1, -10, 0, 14)
+TestLabel.Position = UDim2.new(0, 5, 0, 50)   -- 在按鈕上方
+TestLabel.BackgroundTransparency = 1
+TestLabel.Text = "TEST"
+TestLabel.TextColor3 = Color3.fromRGB(255, 235, 150)   -- 淡黃色（不刺眼）
+TestLabel.Font = Enum.Font.GothamBold
+TestLabel.TextSize = 12
+TestLabel.TextScaled = true
+TestLabel.TextXAlignment = Enum.TextXAlignment.Center
+TestLabel.Parent = Page2
+
+-- ★ A-Train 圖標（左側）
+local ATrainIcon = Instance.new("ImageLabel")
+ATrainIcon.Size = UDim2.new(0, 24, 0, 24)
+ATrainIcon.Position = UDim2.new(0, 5, 0, 64)   -- 與按鈕同排
+ATrainIcon.BackgroundTransparency = 1
+ATrainIcon.Image = "rbxassetid://129724390385413"
+ATrainIcon.ScaleType = Enum.ScaleType.Fit
+ATrainIcon.Parent = Page2
+
+-- ★ A-Train 按鈕（文字向右退讓）
+local ATrainModBtn = Instance.new("TextButton")
+ATrainModBtn.Size = UDim2.new(1, -40, 0, 24)   -- 寬度讓出圖標空間
+ATrainModBtn.Position = UDim2.new(0, 30, 0, 64)
+ATrainModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
+ATrainModBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ATrainModBtn.Font = Enum.Font.GothamBold
+ATrainModBtn.TextSize = 12
+ATrainModBtn.Text = "A-Train Mode"
+ATrainModBtn.TextScaled = true
+ATrainModBtn.TextXAlignment = Enum.TextXAlignment.Left
+ATrainModBtn.Parent = Page2
+local ATrainModCorner = Instance.new("UICorner") ATrainModCorner.CornerRadius = UDim.new(0,4) ATrainModCorner.Parent = ATrainModBtn
+
+-- ★ Kill All 按鈕（保持您滿意的間距 Y=118）
 local KillAllBtn = Instance.new("TextButton")
 KillAllBtn.Size = UDim2.new(1, -10, 0, 24)
-KillAllBtn.Position = UDim2.new(0, 5, 0, 52)
+KillAllBtn.Position = UDim2.new(0, 5, 0, 118)   -- 保持不動
 KillAllBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
 KillAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 KillAllBtn.Font = Enum.Font.GothamBold
@@ -392,10 +448,10 @@ KillAllBtn.TextScaled = true
 KillAllBtn.Parent = Page2
 local KillAllCorner = Instance.new("UICorner") KillAllCorner.CornerRadius = UDim.new(0,4) KillAllCorner.Parent = KillAllBtn
 
-
+-- 以下所有按鈕維持之前的下移位置
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 90)
+MoveModeBtn.Position = UDim2.new(0, 5, 0, 150)
 MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MoveModeBtn.Font = Enum.Font.GothamBold
@@ -407,7 +463,7 @@ local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UD
 
 local ResetPosBtn = Instance.new("TextButton")
 ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
-ResetPosBtn.Position = UDim2.new(0, 5, 0, 112)
+ResetPosBtn.Position = UDim2.new(0, 5, 0, 172)
 ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ResetPosBtn.Font = Enum.Font.GothamBold
@@ -419,7 +475,7 @@ local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UD
 
 local FlightToggleBtn = Instance.new("TextButton")
 FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
-FlightToggleBtn.Position = UDim2.new(0, 5, 0, 136)
+FlightToggleBtn.Position = UDim2.new(0, 5, 0, 196)
 FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 100, 100)
 FlightToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlightToggleBtn.Font = Enum.Font.GothamBold
@@ -431,7 +487,7 @@ local FlightToggleCorner = Instance.new("UICorner") FlightToggleCorner.CornerRad
 
 local FlightLoadLabel = Instance.new("TextLabel")
 FlightLoadLabel.Size = UDim2.new(1, -10, 0, 16)
-FlightLoadLabel.Position = UDim2.new(0, 5, 0, 158)
+FlightLoadLabel.Position = UDim2.new(0, 5, 0, 218)
 FlightLoadLabel.BackgroundTransparency = 1
 FlightLoadLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 FlightLoadLabel.Font = Enum.Font.Gotham
@@ -442,7 +498,7 @@ FlightLoadLabel.Parent = Page2
 
 local SettingsFoldBtn = Instance.new("TextButton")
 SettingsFoldBtn.Size = UDim2.new(1, -10, 0, 24)
-SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 176)
+SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 236)
 SettingsFoldBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 SettingsFoldBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SettingsFoldBtn.Font = Enum.Font.GothamBold
@@ -453,7 +509,7 @@ local SettingsFoldCorner = Instance.new("UICorner") SettingsFoldCorner.CornerRad
 
 local SettingsContent = Instance.new("Frame")
 SettingsContent.Size = UDim2.new(1, -10, 0, 110)
-SettingsContent.Position = UDim2.new(0, 5, 0, 202)
+SettingsContent.Position = UDim2.new(0, 5, 0, 262)
 SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsContent.BorderSizePixel = 0
 SettingsContent.Visible = false
@@ -498,7 +554,7 @@ SettingsFoldBtn.MouseButton1Click:Connect(function()
 	SettingsFoldBtn.Text = settingsOpen and "Settings ▲" or "Settings ▼"
 end)
 
--- ==================== 浮動按鈕容器 ====================
+-- ==================== Floating Buttons ====================
 local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "DracoHubFloatingButtons"
 FloatingGui.ResetOnSpawn = false
@@ -583,13 +639,38 @@ applyButtonAutoScale(ComboButton)
 ComboButton.Parent = FloatingGui
 local ComboCorner = Instance.new("UICorner") ComboCorner.CornerRadius = UDim.new(0, 8) ComboCorner.Parent = ComboButton
 
--- ==================== 移動鎖定開關 ====================
+-- A-Train Aim Button (renamed to Ramkill)
+local MoAimButton = Instance.new("TextButton")
+MoAimButton.Size = UDim2.new(0, 60, 0, 60)
+MoAimButton.Position = DEFAULT_POSITIONS.MoAim
+MoAimButton.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
+MoAimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MoAimButton.Font = Enum.Font.GothamBold
+MoAimButton.Text = "Ramkill"
+MoAimButton.TextScaled = true
+MoAimButton.TextWrapped = true
+MoAimButton.TextSize = 11
+MoAimButton.Visible = false
+MoAimButton.Parent = FloatingGui
+local MoAimCorner = Instance.new("UICorner") MoAimCorner.CornerRadius = UDim.new(0, 8) MoAimCorner.Parent = MoAimButton
+
+-- Cancel button (left side)
+cancelButton = Instance.new("TextButton")
+cancelButton.Size = UDim2.new(0, 40, 0, 26)
+cancelButton.Position = UDim2.new(0, -46, 0.5, -13)
+cancelButton.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+cancelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+cancelButton.Font = Enum.Font.GothamBold
+cancelButton.Text = "Cancel"
+cancelButton.TextScaled = true
+cancelButton.Visible = false
+cancelButton.Parent = MoAimButton
+local cancelCorner = Instance.new("UICorner") cancelCorner.CornerRadius = UDim.new(0, 8) cancelCorner.Parent = cancelButton
+
+-- ==================== Move Lock ====================
 local moveUnlocked = false
 
--- ==================== 雷射眼邏輯 ====================
-local laserActive = false
-local laserThread = nil
-
+-- ==================== Remote Finders ====================
 local function findHomelanderMoveOneRemote()
 	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
@@ -609,6 +690,500 @@ local function findHomelanderMoveOneRemote()
 	end
 	return nil
 end
+
+local function findHomelanderThrowDownRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("homelander") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name == "ThrowDown" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findVecnaOverheadThrowRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("vecna") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "overheadthrow" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findTheFlashCwFinalRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("theflashcw") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name == "Final" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findZodiacKickRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("zodiac") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "kick" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findSteveHShieldCounterRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder.Name:lower() == "steve_h" then
+			local remotesFolder = folder:FindFirstChild("Remotes")
+			if remotesFolder then
+				for _, remote in ipairs(remotesFolder:GetChildren()) do
+					if remote:IsA("RemoteEvent") and remote.Name == "ShieldCounter" then
+						return remote
+					end
+				end
+			end
+			break
+		end
+	end
+	return nil
+end
+
+local function findSpiderManWebBlossomRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("spiderman") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower():find("webbloss") then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findTheBatmanMoveOneRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("thebatman") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "moveone" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findTheFlashCwVibrateArmRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("theflashcw") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "vibratearm" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findTheFlashCwFastestManRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("theflashcw") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "fastestman" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findAmazoFinisherRemote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("amazo") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "finisher" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function findGhostfaceStab2Remote()
+	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	for _, folder in ipairs(charactersFolder:GetChildren()) do
+		if folder:IsA("Folder") or folder:IsA("Model") then
+			if folder.Name:lower():find("ghostface") then
+				local remotesFolder = folder:FindFirstChild("Remotes")
+				if remotesFolder then
+					for _, remote in ipairs(remotesFolder:GetChildren()) do
+						if remote:IsA("RemoteEvent") and remote.Name:lower() == "stab2" then
+							return remote
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+-- ==================== Aim System ====================
+local function getPlayerFromScreenCenter()
+	local camera = workspace.CurrentCamera
+	if not camera then return nil end
+
+	local viewportSize = camera.ViewportSize
+	local screenCenterX = viewportSize.X / 2
+	local detectionWidth = viewportSize.X / 4
+
+	local closestPlayer = nil
+	local closestDepth = math.huge
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local targetCharacter = player.Character
+			if targetCharacter then
+				local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+				if targetRoot then
+					local screenPos, onScreen = camera:WorldToScreenPoint(targetRoot.Position)
+					if onScreen then
+						local screenX = screenPos.X
+						if math.abs(screenX - screenCenterX) <= detectionWidth / 2 then
+							if screenPos.Z < closestDepth then
+								closestDepth = screenPos.Z
+								closestPlayer = player
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return closestPlayer
+end
+
+local function enterAimMode()
+	if aimModeActive then return end
+	aimModeActive = true
+	MoAimButton.Text = "Go"
+	MoAimButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+	cancelButton.Visible = true
+
+	local targetPlayer = getPlayerFromScreenCenter()
+	if targetPlayer then
+		aimTarget = targetPlayer
+		aimActive = true
+		local targetChar = targetPlayer.Character
+		if targetChar then
+			local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+			if targetRoot then
+				aimLine = Instance.new("Part")
+				aimLine.Size = Vector3.new(0.3, 10, 0.3)
+				aimLine.Color = Color3.fromRGB(255, 0, 0)
+				aimLine.Material = Enum.Material.Neon
+				aimLine.Anchored = true
+				aimLine.CanCollide = false
+				aimLine.Parent = workspace
+				aimLine.Position = targetRoot.Position + Vector3.new(0, 3, 0)
+
+				aimHighlight = Instance.new("Highlight")
+				aimHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+				aimHighlight.FillTransparency = 0.7
+				aimHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+				aimHighlight.OutlineTransparency = 0
+				aimHighlight.Parent = targetChar
+			end
+		end
+	end
+
+	if aimUpdateConnection then aimUpdateConnection:Disconnect() end
+	aimUpdateConnection = RunService.Heartbeat:Connect(function()
+		if not aimModeActive then return end
+		local newTarget = getPlayerFromScreenCenter()
+		if newTarget and newTarget ~= aimTarget then
+			aimTarget = newTarget
+			if aimHighlight then aimHighlight:Destroy() end
+			if aimLine then aimLine:Destroy() end
+			local newChar = newTarget.Character
+			if newChar then
+				local newRoot = newChar:FindFirstChild("HumanoidRootPart")
+				if newRoot then
+					aimLine = Instance.new("Part")
+					aimLine.Size = Vector3.new(0.3, 10, 0.3)
+					aimLine.Color = Color3.fromRGB(255, 0, 0)
+					aimLine.Material = Enum.Material.Neon
+					aimLine.Anchored = true
+					aimLine.CanCollide = false
+					aimLine.Parent = workspace
+					aimLine.Position = newRoot.Position + Vector3.new(0, 3, 0)
+
+					aimHighlight = Instance.new("Highlight")
+					aimHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+					aimHighlight.FillTransparency = 0.7
+					aimHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+					aimHighlight.OutlineTransparency = 0
+					aimHighlight.Parent = newChar
+				end
+			end
+		end
+		if aimLine and aimTarget then
+			local targetChar = aimTarget.Character
+			if targetChar then
+				local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+				if targetRoot then
+					aimLine.Position = targetRoot.Position + Vector3.new(0, 3, 0)
+				end
+			end
+		end
+	end)
+end
+
+local function exitAimMode()
+	if not aimModeActive then return end
+	aimModeActive = false
+	MoAimButton.Text = "Ramkill"
+	MoAimButton.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
+	cancelButton.Visible = false
+
+	if aimUpdateConnection then
+		aimUpdateConnection:Disconnect()
+		aimUpdateConnection = nil
+	end
+	if aimLine then aimLine:Destroy() aimLine = nil end
+	if aimHighlight then aimHighlight:Destroy() aimHighlight = nil end
+	aimTarget = nil
+	aimActive = false
+end
+
+-- Modified executeAimAction – fires FastestMan once, and checks for nearby enemies to fire Stab2 twice
+local function executeAimAction()
+	if isExecuting then return end
+	if not aimTarget then return end
+
+	local targetChar = aimTarget.Character
+	if not targetChar then return end
+	local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+	if not targetRoot then return end
+
+	local playerChar = LocalPlayer.Character
+	if not playerChar then return end
+	local humanoid = playerChar:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+	local rootPart = playerChar:FindFirstChild("HumanoidRootPart")
+	if not rootPart then return end
+
+	-- Fire FastestMan remote once
+	local fastestManRemote = findTheFlashCwFastestManRemote()
+	if fastestManRemote then
+		fastestManRemote:FireServer()
+	end
+
+	-- Get Ghostface Stab2 remote for later use
+	local stab2Remote = findGhostfaceStab2Remote()
+
+	isExecuting = true
+	executionCanceled = false
+	cancelButton.Visible = true
+
+	local originalWalkSpeed = humanoid.WalkSpeed
+	local originalJumpPower = humanoid.JumpPower
+
+	local speed = 200
+	humanoid.WalkSpeed = speed
+	humanoid.JumpPower = 0
+
+	-- Flag to prevent multiple Stab2 triggers during one dash
+	local stab2Triggered = false
+
+	if executionFlashThread then task.cancel(executionFlashThread) end
+	executionFlashThread = task.spawn(function()
+		local chars = {"● ● ●", "● ● ○", "● ○ ●", "○ ● ●"}
+		local index = 1
+		while isExecuting do
+			MoAimButton.Text = chars[index]
+			index = index % #chars + 1
+			task.wait(0.25)
+		end
+		MoAimButton.Text = "Go"
+	end)
+
+	if executionConnection then executionConnection:Disconnect() end
+	executionConnection = RunService.Heartbeat:Connect(function()
+		if executionCanceled or not isExecuting then
+			if rootPart then
+				rootPart.Velocity = Vector3.zero
+			end
+			return
+		end
+
+		if not targetRoot or not targetRoot.Parent then
+			executionCanceled = true
+			return
+		end
+
+		-- Move towards target
+		local direction = (targetRoot.Position - rootPart.Position).Unit
+		rootPart.Velocity = direction * speed
+
+		-- Check for nearby enemies (within 4 studs) and fire Stab2 twice if detected
+		if stab2Remote and not stab2Triggered then
+			local myPos = rootPart.Position
+			for _, player in ipairs(Players:GetPlayers()) do
+				if player ~= LocalPlayer then
+					local char = player.Character
+					if char then
+						local hrp = char:FindFirstChild("HumanoidRootPart")
+						if hrp then
+							local dist = (myPos - hrp.Position).Magnitude
+							if dist <= 4 then
+								-- Fire Stab2 twice
+								stab2Remote:FireServer()
+								task.wait(0.05) -- slight delay between fires
+								stab2Remote:FireServer()
+								stab2Triggered = true
+								break
+							end
+						end
+					end
+				end
+			end
+		end
+
+		local distance = (rootPart.Position - targetRoot.Position).Magnitude
+		if distance < 4 then
+			executionCanceled = true
+		end
+	end)
+
+	while isExecuting and not executionCanceled do
+		task.wait(0.05)
+	end
+
+	if executionConnection then
+		executionConnection:Disconnect()
+		executionConnection = nil
+	end
+
+	if humanoid then
+		humanoid.WalkSpeed = originalWalkSpeed
+		humanoid.JumpPower = originalJumpPower
+		humanoid:MoveTo(rootPart.Position)
+	end
+
+	if executionFlashThread then
+		task.cancel(executionFlashThread)
+		executionFlashThread = nil
+	end
+	MoAimButton.Text = "Go"
+
+	isExecuting = false
+	exitAimMode()
+end
+
+MoAimButton.MouseButton1Click:Connect(function()
+	if moveUnlocked then return end
+
+	if aimModeActive then
+		task.spawn(executeAimAction)
+	else
+		enterAimMode()
+	end
+end)
+
+cancelButton.MouseButton1Click:Connect(function()
+	if isExecuting then
+		executionCanceled = true
+		task.wait(0.2)
+	end
+	exitAimMode()
+end)
+
+-- ==================== Laser ====================
+local laserActive = false
+local laserThread = nil
 
 local function setLaserActive(active)
 	laserActive = active
@@ -643,27 +1218,7 @@ LaserButton.MouseButton1Click:Connect(function()
 	setLaserActive(not laserActive)
 end)
 
--- Upthrow 邏輯
-local function findHomelanderThrowDownRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("homelander") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name == "ThrowDown" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
+-- Upthrow
 UpthrowButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	local remote = findHomelanderThrowDownRemote()
@@ -692,27 +1247,7 @@ UpthrowButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Overthrow 邏輯
-local function findVecnaOverheadThrowRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("vecna") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "overheadthrow" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
+-- Overthrow
 OverthrowButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	local remote = findVecnaOverheadThrowRemote()
@@ -741,29 +1276,9 @@ OverthrowButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Flashstrike 邏輯
+-- Flashstrike
 local flashstrikeCooldown = 10
 local flashstrikeCooldownActive = false
-
-local function findTheFlashCwFinalRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("theflashcw") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name == "Final" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
 
 local function startFlashstrikeCooldown()
 	flashstrikeCooldownActive = true
@@ -813,67 +1328,7 @@ FlashstrikeButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Kick 邏輯
-local function findZodiacKickRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("zodiac") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "kick" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findSteveHShieldCounterRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower() == "steve_h" then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name == "ShieldCounter" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findSpiderManWebBlossomRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("spiderman") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower():find("webbloss") then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
+-- Kick
 KickButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	local kickRemote = findZodiacKickRemote()
@@ -914,47 +1369,7 @@ KickButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Combo 邏輯（Donut → Batman MoveOne + VibrateArm x40）
-local function findTheBatmanMoveOneRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("thebatman") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "moveone" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findTheFlashCwVibrateArmRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("theflashcw") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "vibratearm" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
+-- Combo
 ComboButton.MouseButton1Click:Connect(function()
 	if moveUnlocked then return end
 	
@@ -1014,191 +1429,44 @@ ResetPosBtn.MouseButton1Click:Connect(function()
 	FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
 	KickButton.Position = DEFAULT_POSITIONS.Kick
 	ComboButton.Position = DEFAULT_POSITIONS.Combo
+	MoAimButton.Position = DEFAULT_POSITIONS.MoAim
 end)
 
--- 拖動邏輯
-local laserDragging = false
-local laserDragStart, laserStartPos
+-- Drag setup for floating buttons
+local function setupDrag(button)
+	local dragging = false
+	local dragStart, startPos
+	button.InputBegan:Connect(function(input)
+		if not moveUnlocked then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = button.Position
+		end
+	end)
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
 
-LaserButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		laserDragging = true
-		laserDragStart = input.Position
-		laserStartPos = LaserButton.Position
-	end
-end)
+setupDrag(LaserButton)
+setupDrag(UpthrowButton)
+setupDrag(OverthrowButton)
+setupDrag(FlashstrikeButton)
+setupDrag(KickButton)
+setupDrag(ComboButton)
+setupDrag(MoAimButton)
 
-local upthrowDragging = false
-local upthrowDragStart, upthrowStartPos
-
-UpthrowButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		upthrowDragging = true
-		upthrowDragStart = input.Position
-		upthrowStartPos = UpthrowButton.Position
-	end
-end)
-
-local overthrowDragging = false
-local overthrowDragStart, overthrowStartPos
-
-OverthrowButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		overthrowDragging = true
-		overthrowDragStart = input.Position
-		overthrowStartPos = OverthrowButton.Position
-	end
-end)
-
-local flashstrikeDragging = false
-local flashstrikeDragStart, flashstrikeStartPos
-
-FlashstrikeButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		flashstrikeDragging = true
-		flashstrikeDragStart = input.Position
-		flashstrikeStartPos = FlashstrikeButton.Position
-	end
-end)
-
-local kickDragging = false
-local kickDragStart, kickStartPos
-
-KickButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		kickDragging = true
-		kickDragStart = input.Position
-		kickStartPos = KickButton.Position
-	end
-end)
-
-local comboDragging = false
-local comboDragStart, comboStartPos
-
-ComboButton.InputBegan:Connect(function(input)
-	if not moveUnlocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		comboDragging = true
-		comboDragStart = input.Position
-		comboStartPos = ComboButton.Position
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		laserDragging = false
-		upthrowDragging = false
-		overthrowDragging = false
-		flashstrikeDragging = false
-		kickDragging = false
-		comboDragging = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if laserDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - laserDragStart
-		LaserButton.Position = UDim2.new(
-			laserStartPos.X.Scale,
-			laserStartPos.X.Offset + delta.X,
-			laserStartPos.Y.Scale,
-			laserStartPos.Y.Offset + delta.Y
-		)
-	end
-	if upthrowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - upthrowDragStart
-		UpthrowButton.Position = UDim2.new(
-			upthrowStartPos.X.Scale,
-			upthrowStartPos.X.Offset + delta.X,
-			upthrowStartPos.Y.Scale,
-			upthrowStartPos.Y.Offset + delta.Y
-		)
-	end
-	if overthrowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - overthrowDragStart
-		OverthrowButton.Position = UDim2.new(
-			overthrowStartPos.X.Scale,
-			overthrowStartPos.X.Offset + delta.X,
-			overthrowStartPos.Y.Scale,
-			overthrowStartPos.Y.Offset + delta.Y
-		)
-	end
-	if flashstrikeDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - flashstrikeDragStart
-		FlashstrikeButton.Position = UDim2.new(
-			flashstrikeStartPos.X.Scale,
-			flashstrikeStartPos.X.Offset + delta.X,
-			flashstrikeStartPos.Y.Scale,
-			flashstrikeStartPos.Y.Offset + delta.Y
-		)
-	end
-	if kickDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - kickDragStart
-		KickButton.Position = UDim2.new(
-			kickStartPos.X.Scale,
-			kickStartPos.X.Offset + delta.X,
-			kickStartPos.Y.Scale,
-			kickStartPos.Y.Offset + delta.Y
-		)
-	end
-	if comboDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - comboDragStart
-		ComboButton.Position = UDim2.new(
-			comboStartPos.X.Scale,
-			comboStartPos.X.Offset + delta.X,
-			comboStartPos.Y.Scale,
-			comboStartPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
--- Homelanders Mod
+-- ==================== Mods ====================
 local homelanderModActive = false
-
-local function findAmazoFinisherRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("amazo") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "finisher" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findGhostfaceStab2Remote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("ghostface") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "stab2" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
 
 local function stopKillAllTeleport()
 	killAllActive = false
@@ -1206,7 +1474,6 @@ local function stopKillAllTeleport()
 		task.cancel(killAllTeleportThread)
 		killAllTeleportThread = nil
 	end
-	-- 解除時把別人的 Anchored 還原
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character then
 			local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
@@ -1252,7 +1519,6 @@ local function startKillAllTeleport()
 			end
 		end)
 
-		-- 保持線程存活直到被停止（整個過程不會斷開鎖定）
 		while killAllActive do
 			task.wait(0.05)
 		end
@@ -1263,7 +1529,7 @@ local function startKillAllTeleport()
 end
 
 local function doKillAll()
-	if killAllActive then return end  -- 防止連點
+	if killAllActive then return end
 
 	local stabRemote = findGhostfaceStab2Remote()
 	if not stabRemote then
@@ -1278,10 +1544,8 @@ local function doKillAll()
 	KillAllBtn.Text = "Killing..."
 	KillAllBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 
-	-- 開始持續把人鎖在面前 3 studs，同時立刻開始攻擊
 	startKillAllTeleport()
 
-	-- 從一開始到 2 秒結束，每隔 0.1 秒同時執行 20 次 Stab2
 	local endTime = tick() + 2
 	while tick() < endTime do
 		for i = 1, 20 do
@@ -1290,13 +1554,11 @@ local function doKillAll()
 		task.wait(0.1)
 	end
 
-	-- 解除
 	stopKillAllTeleport()
 
 	KillAllBtn.Text = "💀 Kill All"
 	KillAllBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
 end
-
 
 local function startFinisherLoop()
 	if finisherActive then return end
@@ -1316,6 +1578,34 @@ local function stopFinisherLoop()
 	if finisherLoopThread then
 		task.cancel(finisherLoopThread)
 		finisherLoopThread = nil
+	end
+end
+
+local function updateAllButtonsVisibility()
+	if homelanderModActive then
+		LaserButton.Visible = true
+		UpthrowButton.Visible = true
+		OverthrowButton.Visible = true
+		FlashstrikeButton.Visible = true
+		KickButton.Visible = true
+		ComboButton.Visible = true
+		MoAimButton.Visible = false
+	elseif aTrainModActive then
+		LaserButton.Visible = false
+		UpthrowButton.Visible = false
+		OverthrowButton.Visible = false
+		FlashstrikeButton.Visible = true
+		KickButton.Visible = false
+		ComboButton.Visible = false
+		MoAimButton.Visible = true
+	else
+		LaserButton.Visible = false
+		UpthrowButton.Visible = false
+		OverthrowButton.Visible = false
+		FlashstrikeButton.Visible = false
+		KickButton.Visible = false
+		ComboButton.Visible = false
+		MoAimButton.Visible = false
 	end
 end
 
@@ -1341,15 +1631,34 @@ local function updateHomelanderModButton()
 	end
 end
 
+local function updateATrainModButton()
+	if aTrainModActive then
+		ATrainModBtn.Text = "Cancel A-Train"
+		ATrainModBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	else
+		ATrainModBtn.Text = "A-Train Mode"
+		ATrainModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
+	end
+end
+
 HomelanderModBtn.MouseButton1Click:Connect(function()
 	homelanderModActive = not homelanderModActive
-	LaserButton.Visible = homelanderModActive
-	UpthrowButton.Visible = homelanderModActive
-	OverthrowButton.Visible = homelanderModActive
-	FlashstrikeButton.Visible = homelanderModActive
-	KickButton.Visible = homelanderModActive
-	ComboButton.Visible = homelanderModActive
+	if homelanderModActive and aTrainModActive then
+		aTrainModActive = false
+		updateATrainModButton()
+	end
 	updateHomelanderModButton()
+	updateAllButtonsVisibility()
+end)
+
+ATrainModBtn.MouseButton1Click:Connect(function()
+	aTrainModActive = not aTrainModActive
+	if aTrainModActive and homelanderModActive then
+		homelanderModActive = false
+		updateHomelanderModButton()
+	end
+	updateATrainModButton()
+	updateAllButtonsVisibility()
 end)
 
 FinisherButton.MouseButton1Click:Connect(function()
@@ -1370,8 +1679,10 @@ KillAllBtn.MouseButton1Click:Connect(function()
 end)
 
 updateHomelanderModButton()
+updateATrainModButton()
+updateAllButtonsVisibility()
 
--- UI Scale 滑條邏輯
+-- UI Scale Slider
 local minScale = 0.5 local maxScale = 1.5 local currentScale = uiScale.Scale
 local function UpdateFromScale(scale)
 	currentScale = math.clamp(scale, minScale, maxScale) uiScale.Scale = currentScale
@@ -1420,6 +1731,13 @@ local function CancelScript()
 	kickActive = false
 	stopFinisherLoop()
 	stopKillAllTeleport()
+	
+	if isExecuting then
+		executionCanceled = true
+		task.wait(0.2)
+	end
+	exitAimMode()
+	
 	if currentLoopThread then
 		task.cancel(currentLoopThread)
 		currentLoopThread = nil
@@ -1436,7 +1754,7 @@ end
 
 CancelScriptBtn.MouseButton1Click:Connect(CancelScript)
 
--- 主菜單拖動與鎖定
+-- Main window drag and lock
 local isWindowLocked = true
 local function UpdateLockVisuals()
 	if isWindowLocked then LockButtonTop.Text = "🔒" LockButtonTop.TextColor3 = Color3.fromRGB(255,80,80)
@@ -1463,10 +1781,10 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Loop 邏輯
+-- Loop
 local currentLoopThread = nil
 
--- 刷新技能列表
+-- Refresh scanner list
 local function Refresh()
 	for _, child in ipairs(Scroll:GetChildren()) do
 		if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
@@ -1536,4 +1854,6 @@ end
 LocalPlayer.CharacterAdded:Connect(function(newChar) Character = newChar task.wait(1) AutoDetectCharacter() end)
 SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
-AutoDetectCharacter() Refresh() 
+AutoDetectCharacter() Refresh()
+
+print("Script loaded. Ramkill: 200 speed, Stab2 once if enemy within 4 studs, stop at 4 studs, free speed 30 for 3.5s. Cancel button on left. TEST label in soft yellow, independent, clean layout with proper spacing to Kill All.")
