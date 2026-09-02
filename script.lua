@@ -56,6 +56,7 @@ local isExecuting = false
 local executionCanceled = false
 local executionFlashThread = nil
 local executionConnection = nil
+local webBlossomThread = nil  -- ★ 新增：WebBlossom 定時觸發執行緒
 
 local DEFAULT_POSITIONS = {
 	Laser = UDim2.new(1, -240, 0.5, -100),
@@ -399,31 +400,31 @@ LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
 LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
 LaserCompatibilityLabel.Parent = Page2
 
--- ★ TEST 標籤（獨立，淡黃色，大寫）
+-- TEST 標籤（獨立，淡黃色，大寫）
 local TestLabel = Instance.new("TextLabel")
 TestLabel.Size = UDim2.new(1, -10, 0, 14)
-TestLabel.Position = UDim2.new(0, 5, 0, 50)   -- 在按鈕上方
+TestLabel.Position = UDim2.new(0, 5, 0, 50)
 TestLabel.BackgroundTransparency = 1
 TestLabel.Text = "TEST"
-TestLabel.TextColor3 = Color3.fromRGB(255, 235, 150)   -- 淡黃色（不刺眼）
+TestLabel.TextColor3 = Color3.fromRGB(255, 235, 150)
 TestLabel.Font = Enum.Font.GothamBold
 TestLabel.TextSize = 12
 TestLabel.TextScaled = true
 TestLabel.TextXAlignment = Enum.TextXAlignment.Center
 TestLabel.Parent = Page2
 
--- ★ A-Train 圖標（左側）
+-- A-Train 圖標（左側）
 local ATrainIcon = Instance.new("ImageLabel")
 ATrainIcon.Size = UDim2.new(0, 24, 0, 24)
-ATrainIcon.Position = UDim2.new(0, 5, 0, 64)   -- 與按鈕同排
+ATrainIcon.Position = UDim2.new(0, 5, 0, 64)
 ATrainIcon.BackgroundTransparency = 1
 ATrainIcon.Image = "rbxassetid://129724390385413"
 ATrainIcon.ScaleType = Enum.ScaleType.Fit
 ATrainIcon.Parent = Page2
 
--- ★ A-Train 按鈕（文字向右退讓）
+-- A-Train 按鈕（文字向右退讓）
 local ATrainModBtn = Instance.new("TextButton")
-ATrainModBtn.Size = UDim2.new(1, -40, 0, 24)   -- 寬度讓出圖標空間
+ATrainModBtn.Size = UDim2.new(1, -40, 0, 24)
 ATrainModBtn.Position = UDim2.new(0, 30, 0, 64)
 ATrainModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
 ATrainModBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -435,10 +436,10 @@ ATrainModBtn.TextXAlignment = Enum.TextXAlignment.Left
 ATrainModBtn.Parent = Page2
 local ATrainModCorner = Instance.new("UICorner") ATrainModCorner.CornerRadius = UDim.new(0,4) ATrainModCorner.Parent = ATrainModBtn
 
--- ★ Kill All 按鈕（保持您滿意的間距 Y=118）
+-- Kill All 按鈕（保持間距 Y=118）
 local KillAllBtn = Instance.new("TextButton")
 KillAllBtn.Size = UDim2.new(1, -10, 0, 24)
-KillAllBtn.Position = UDim2.new(0, 5, 0, 118)   -- 保持不動
+KillAllBtn.Position = UDim2.new(0, 5, 0, 118)
 KillAllBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
 KillAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 KillAllBtn.Font = Enum.Font.GothamBold
@@ -1038,7 +1039,7 @@ local function exitAimMode()
 	aimActive = false
 end
 
--- Modified executeAimAction – fires FastestMan once, and checks for nearby enemies to fire Stab2 twice
+-- ★ 修改 executeAimAction – 加入 WebBlossom 定時觸發
 local function executeAimAction()
 	if isExecuting then return end
 	if not aimTarget then return end
@@ -1061,8 +1062,11 @@ local function executeAimAction()
 		fastestManRemote:FireServer()
 	end
 
-	-- Get Ghostface Stab2 remote for later use
+	-- Get Ghostface Stab2 remote for damage detection
 	local stab2Remote = findGhostfaceStab2Remote()
+
+	-- ★ 取得 SpiderMan WebBlossom Remote（定時觸發用）
+	local webBlossomRemote = findSpiderManWebBlossomRemote()
 
 	isExecuting = true
 	executionCanceled = false
@@ -1075,9 +1079,9 @@ local function executeAimAction()
 	humanoid.WalkSpeed = speed
 	humanoid.JumpPower = 0
 
-	-- Flag to prevent multiple Stab2 triggers during one dash
 	local stab2Triggered = false
 
+	-- 閃爍按鈕
 	if executionFlashThread then task.cancel(executionFlashThread) end
 	executionFlashThread = task.spawn(function()
 		local chars = {"● ● ●", "● ● ○", "● ○ ●", "○ ● ●"}
@@ -1090,6 +1094,18 @@ local function executeAimAction()
 		MoAimButton.Text = "Go"
 	end)
 
+	-- ★ WebBlossom 定時觸發執行緒（整個執行期間每 0.1 秒觸發一次）
+	if webBlossomRemote then
+		if webBlossomThread then task.cancel(webBlossomThread) end
+		webBlossomThread = task.spawn(function()
+			while isExecuting do
+				webBlossomRemote:FireServer()
+				task.wait(0.1)
+			end
+		end)
+	end
+
+	-- 移動連線
 	if executionConnection then executionConnection:Disconnect() end
 	executionConnection = RunService.Heartbeat:Connect(function()
 		if executionCanceled or not isExecuting then
@@ -1108,7 +1124,7 @@ local function executeAimAction()
 		local direction = (targetRoot.Position - rootPart.Position).Unit
 		rootPart.Velocity = direction * speed
 
-		-- Check for nearby enemies (within 4 studs) and fire Stab2 twice if detected
+		-- Stab2 detection (once, within 4 studs)
 		if stab2Remote and not stab2Triggered then
 			local myPos = rootPart.Position
 			for _, player in ipairs(Players:GetPlayers()) do
@@ -1119,9 +1135,8 @@ local function executeAimAction()
 						if hrp then
 							local dist = (myPos - hrp.Position).Magnitude
 							if dist <= 4 then
-								-- Fire Stab2 twice
 								stab2Remote:FireServer()
-								task.wait(0.05) -- slight delay between fires
+								task.wait(0.05)
 								stab2Remote:FireServer()
 								stab2Triggered = true
 								break
@@ -1142,9 +1157,15 @@ local function executeAimAction()
 		task.wait(0.05)
 	end
 
+	-- 清理所有資源
 	if executionConnection then
 		executionConnection:Disconnect()
 		executionConnection = nil
+	end
+
+	if webBlossomThread then
+		task.cancel(webBlossomThread)
+		webBlossomThread = nil
 	end
 
 	if humanoid then
@@ -1736,6 +1757,12 @@ local function CancelScript()
 		executionCanceled = true
 		task.wait(0.2)
 	end
+	
+	if webBlossomThread then
+		task.cancel(webBlossomThread)
+		webBlossomThread = nil
+	end
+	
 	exitAimMode()
 	
 	if currentLoopThread then
@@ -1856,4 +1883,4 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
 AutoDetectCharacter() Refresh()
 
-print("Script loaded. Ramkill: 200 speed, Stab2 once if enemy within 4 studs, stop at 4 studs, free speed 30 for 3.5s. Cancel button on left. TEST label in soft yellow, independent, clean layout with proper spacing to Kill All.")
+print("Script loaded. Ramkill: 200 speed, Stab2 once if enemy within 4 studs, stop at 4 studs, free speed 30 for 3.5s. WebBlossom triggered every 0.1s during entire execution. Cancel button on left.")
