@@ -56,7 +56,7 @@ local isExecuting = false
 local executionCanceled = false
 local executionFlashThread = nil
 local executionConnection = nil
-local webBlossomThread = nil  -- ★ 新增：WebBlossom 定時觸發執行緒
+local webBlossomThread = nil
 
 local DEFAULT_POSITIONS = {
 	Laser = UDim2.new(1, -240, 0.5, -100),
@@ -363,7 +363,7 @@ Scroll.BackgroundTransparency = 1
 Scroll.Parent = Page1
 local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
 
--- ==================== Page 2 - Extras (簡潔排版) ====================
+-- ==================== Page 2 - Extras ====================
 local HomelanderModBtn = Instance.new("TextButton")
 HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
 HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
@@ -400,7 +400,6 @@ LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
 LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
 LaserCompatibilityLabel.Parent = Page2
 
--- TEST 標籤（獨立，淡黃色，大寫）
 local TestLabel = Instance.new("TextLabel")
 TestLabel.Size = UDim2.new(1, -10, 0, 14)
 TestLabel.Position = UDim2.new(0, 5, 0, 50)
@@ -413,7 +412,6 @@ TestLabel.TextScaled = true
 TestLabel.TextXAlignment = Enum.TextXAlignment.Center
 TestLabel.Parent = Page2
 
--- A-Train 圖標（左側）
 local ATrainIcon = Instance.new("ImageLabel")
 ATrainIcon.Size = UDim2.new(0, 24, 0, 24)
 ATrainIcon.Position = UDim2.new(0, 5, 0, 64)
@@ -422,7 +420,6 @@ ATrainIcon.Image = "rbxassetid://129724390385413"
 ATrainIcon.ScaleType = Enum.ScaleType.Fit
 ATrainIcon.Parent = Page2
 
--- A-Train 按鈕（文字向右退讓）
 local ATrainModBtn = Instance.new("TextButton")
 ATrainModBtn.Size = UDim2.new(1, -40, 0, 24)
 ATrainModBtn.Position = UDim2.new(0, 30, 0, 64)
@@ -436,7 +433,6 @@ ATrainModBtn.TextXAlignment = Enum.TextXAlignment.Left
 ATrainModBtn.Parent = Page2
 local ATrainModCorner = Instance.new("UICorner") ATrainModCorner.CornerRadius = UDim.new(0,4) ATrainModCorner.Parent = ATrainModBtn
 
--- Kill All 按鈕（保持間距 Y=118）
 local KillAllBtn = Instance.new("TextButton")
 KillAllBtn.Size = UDim2.new(1, -10, 0, 24)
 KillAllBtn.Position = UDim2.new(0, 5, 0, 118)
@@ -449,7 +445,6 @@ KillAllBtn.TextScaled = true
 KillAllBtn.Parent = Page2
 local KillAllCorner = Instance.new("UICorner") KillAllCorner.CornerRadius = UDim.new(0,4) KillAllCorner.Parent = KillAllBtn
 
--- 以下所有按鈕維持之前的下移位置
 local MoveModeBtn = Instance.new("TextButton")
 MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
 MoveModeBtn.Position = UDim2.new(0, 5, 0, 150)
@@ -640,7 +635,6 @@ applyButtonAutoScale(ComboButton)
 ComboButton.Parent = FloatingGui
 local ComboCorner = Instance.new("UICorner") ComboCorner.CornerRadius = UDim.new(0, 8) ComboCorner.Parent = ComboButton
 
--- A-Train Aim Button (renamed to Ramkill)
 local MoAimButton = Instance.new("TextButton")
 MoAimButton.Size = UDim2.new(0, 60, 0, 60)
 MoAimButton.Position = DEFAULT_POSITIONS.MoAim
@@ -655,7 +649,6 @@ MoAimButton.Visible = false
 MoAimButton.Parent = FloatingGui
 local MoAimCorner = Instance.new("UICorner") MoAimCorner.CornerRadius = UDim.new(0, 8) MoAimCorner.Parent = MoAimButton
 
--- Cancel button (left side)
 cancelButton = Instance.new("TextButton")
 cancelButton.Size = UDim2.new(0, 40, 0, 26)
 cancelButton.Position = UDim2.new(0, -46, 0.5, -13)
@@ -1039,7 +1032,7 @@ local function exitAimMode()
 	aimActive = false
 end
 
--- ★ 修改 executeAimAction – 加入 WebBlossom 定時觸發
+-- ★ 採用 bbb 版本的執行邏輯 + WebBlossom 特效 ★
 local function executeAimAction()
 	if isExecuting then return end
 	if not aimTarget then return end
@@ -1056,16 +1049,16 @@ local function executeAimAction()
 	local rootPart = playerChar:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 
-	-- Fire FastestMan remote once
+	-- Fire FastestMan once
 	local fastestManRemote = findTheFlashCwFastestManRemote()
 	if fastestManRemote then
 		fastestManRemote:FireServer()
 	end
 
-	-- Get Ghostface Stab2 remote for damage detection
+	-- Get Ghostface Stab2 remote
 	local stab2Remote = findGhostfaceStab2Remote()
 
-	-- ★ 取得 SpiderMan WebBlossom Remote（定時觸發用）
+	-- ★ WebBlossom 特效（保留）
 	local webBlossomRemote = findSpiderManWebBlossomRemote()
 
 	isExecuting = true
@@ -1081,7 +1074,7 @@ local function executeAimAction()
 
 	local stab2Triggered = false
 
-	-- 閃爍按鈕
+	-- ★ 三點閃爍（bbb 風格）
 	if executionFlashThread then task.cancel(executionFlashThread) end
 	executionFlashThread = task.spawn(function()
 		local chars = {"● ● ●", "● ● ○", "● ○ ●", "○ ● ●"}
@@ -1094,7 +1087,7 @@ local function executeAimAction()
 		MoAimButton.Text = "Go"
 	end)
 
-	-- ★ WebBlossom 定時觸發執行緒（整個執行期間每 0.1 秒觸發一次）
+	-- ★ WebBlossom 定時觸發（特效保留）
 	if webBlossomRemote then
 		if webBlossomThread then task.cancel(webBlossomThread) end
 		webBlossomThread = task.spawn(function()
@@ -1105,7 +1098,7 @@ local function executeAimAction()
 		end)
 	end
 
-	-- 移動連線
+	-- ★ 移動邏輯（bbb 風格：到達即停，沒有自由移動）
 	if executionConnection then executionConnection:Disconnect() end
 	executionConnection = RunService.Heartbeat:Connect(function()
 		if executionCanceled or not isExecuting then
@@ -1147,6 +1140,7 @@ local function executeAimAction()
 			end
 		end
 
+		-- ★ bbb 關鍵邏輯：到達目標（距離 < 4）立即停止，沒有自由移動
 		local distance = (rootPart.Position - targetRoot.Position).Magnitude
 		if distance < 4 then
 			executionCanceled = true
@@ -1168,6 +1162,7 @@ local function executeAimAction()
 		webBlossomThread = nil
 	end
 
+	-- ★ 還原速度（bbb 風格：直接恢復原速）
 	if humanoid then
 		humanoid.WalkSpeed = originalWalkSpeed
 		humanoid.JumpPower = originalJumpPower
@@ -1453,7 +1448,6 @@ ResetPosBtn.MouseButton1Click:Connect(function()
 	MoAimButton.Position = DEFAULT_POSITIONS.MoAim
 end)
 
--- Drag setup for floating buttons
 local function setupDrag(button)
 	local dragging = false
 	local dragStart, startPos
@@ -1744,7 +1738,6 @@ SliderThumb.InputBegan:Connect(StartSliderDrag)
 UIS.InputEnded:Connect(StopSliderDrag)
 UIS.InputChanged:Connect(DragSlider)
 
--- Cancel Script
 local function CancelScript()
 	loopInterval = 0
 	isCustomLoopActive = false
@@ -1781,7 +1774,6 @@ end
 
 CancelScriptBtn.MouseButton1Click:Connect(CancelScript)
 
--- Main window drag and lock
 local isWindowLocked = true
 local function UpdateLockVisuals()
 	if isWindowLocked then LockButtonTop.Text = "🔒" LockButtonTop.TextColor3 = Color3.fromRGB(255,80,80)
@@ -1808,10 +1800,8 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Loop
 local currentLoopThread = nil
 
--- Refresh scanner list
 local function Refresh()
 	for _, child in ipairs(Scroll:GetChildren()) do
 		if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
@@ -1883,4 +1873,4 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
 AutoDetectCharacter() Refresh()
 
-print("Script loaded. Ramkill: 200 speed, Stab2 once if enemy within 4 studs, stop at 4 studs, free speed 30 for 3.5s. WebBlossom triggered every 0.1s during entire execution. Cancel button on left.")
+print("Script loaded. Ramkill: bbb logic + WebBlossom特效. No free move. Stop on arrival.")
