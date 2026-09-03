@@ -58,7 +58,7 @@ local executionFlashThread = nil
 local executionConnection = nil
 local webBlossomThread = nil
 
--- ========== 作者标记 ==========
+-- ========== Author Tag ==========
 local AUTHOR_NAME = "tuh2255"
 local authorTag = nil
 local authorCheckThread = nil
@@ -1191,7 +1191,6 @@ local function executeAimAction()
 			end
 		end
 
-		-- ✅ 停止距离改为 1.2
 		local distance = (rootPart.Position - targetRoot.Position).Magnitude
 		if distance < 1.2 then
 			executionCanceled = true
@@ -1931,7 +1930,7 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
 
 AutoDetectCharacter() Refresh()
 
--- 启动作者标记检测
+-- Start author tag detection
 startAuthorDetection()
 
 print("Script loaded. Ramkill stop distance = 1.2. Author marker: [YYDS] Official Test Account for tuh2255.")
