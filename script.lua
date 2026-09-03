@@ -1,1876 +1,1709 @@
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-
--- Clean up old GUIs
-local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubScannerV7")
-if oldGui then oldGui:Destroy() end
-local oldLaserGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubLaserButton")
-if oldLaserGui then oldLaserGui:Destroy() end
-local oldUpthrowGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubUpthrowButton")
-if oldUpthrowGui then oldUpthrowGui:Destroy() end
-local oldOverthrowGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubOverthrowButton")
-if oldOverthrowGui then oldOverthrowGui:Destroy() end
-local oldFinalGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubFinalButton")
-if oldFinalGui then oldFinalGui:Destroy() end
-local oldKickGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubKickButton")
-if oldKickGui then oldKickGui:Destroy() end
-local oldComboGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubComboButton")
-if oldComboGui then oldComboGui:Destroy() end
-local oldFloating = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("DracoHubFloatingButtons")
-if oldFloating then oldFloating:Destroy() end
-
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Root = Character:WaitForChild("HumanoidRootPart")
-
-local flightTask = nil
-local kickActive = false
-
--- Finisher
-local finisherEnabled = false
-local finisherLoopThread = nil
-local finisherActive = false
-
--- Kill All
-local killAllActive = false
-local killAllTeleportThread = nil
-local KILLALL_OFFSET = 3
-
--- A-Train / Aim
-local aTrainModActive = false
-local aimActive = false
-local aimTarget = nil
-local aimLine = nil
-local aimHighlight = nil
-local aimUpdateConnection = nil
-
-local aimModeActive = false
-local cancelButton = nil
-local AIM_EXECUTE_REMOTE_NAME = "MoveOne"
-
--- Execution state
-local isExecuting = false
-local executionCanceled = false
-local executionFlashThread = nil
-local executionConnection = nil
-local webBlossomThread = nil
-
-local DEFAULT_POSITIONS = {
-	Laser = UDim2.new(1, -240, 0.5, -100),
-	Upthrow = UDim2.new(1, -310, 0.5, -30),
-	Overthrow = UDim2.new(1, -310, 0.5, 40),
-	Flashstrike = UDim2.new(1, -310, 0.5, -100),
-	Kick = UDim2.new(1, -240, 0.5, -170),
-	Combo = UDim2.new(1, -310, 0.5, -170),
-	MoAim = UDim2.new(1, -310, 0.5, -30)
+local _0x0000 = _0x0001:_0x0002(string.char(80, 108, 97, 121, 101, 114, 115))
+local _0x0003 = _0x0001:_0x0002(string.char(85, 115, 101, 114, 73, 110, 112, 117, 116, 83, 101, 114, 118, 105, 99, 101))
+local _0x0004 = _0x0001:_0x0002(string.char(82, 101, 112, 108, 105, 99, 97, 116, 101, 100, 83, 116, 111, 114, 97, 103, 101))
+local _0x0005 = _0x0001:_0x0002(string.char(82, 117, 110, 83, 101, 114, 118, 105, 99, 101))
+local _0x0006 = _0x0000._0x0006
+local _0x000b = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 83, 99, 97, 110, 110, 101, 114, 86, 55))
+if (2 * 3 > 5) and _0x000b then _0x000b:_0x000e() end
+local _0x000f = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 76, 97, 115, 101, 114, 66, 117, 116, 116, 111, 110))
+if _0x000f then _0x000f:_0x000e() end
+local _0x0010 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 85, 112, 116, 104, 114, 111, 119, 66, 117, 116, 116, 111, 110))
+if _0x0010 then _0x0010:_0x000e() end
+local _0x0011 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 79, 118, 101, 114, 116, 104, 114, 111, 119, 66, 117, 116, 116, 111, 110))
+if (true or false) and _0x0011 then _0x0011:_0x000e() end
+local _0x0012 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 70, 105, 110, 97, 108, 66, 117, 116, 116, 111, 110))
+if (1 + 1 == 2) and _0x0012 then _0x0012:_0x000e() end
+local _0x0013 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 75, 105, 99, 107, 66, 117, 116, 116, 111, 110))
+if (5 == 5) and _0x0013 then _0x0013:_0x000e() end
+local _0x0014 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 67, 111, 109, 98, 111, 66, 117, 116, 116, 111, 110))
+if (true or false) and _0x0014 then _0x0014:_0x000e() end
+local _0x0015 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105)):_0x000d(string.char(68, 114, 97, 99, 111, 72, 117, 98, 70, 108, 111, 97, 116, 105, 110, 103, 66, 117, 116, 116, 111, 110, 115))
+if (5 == 5) and _0x0015 then _0x0015:_0x000e() end
+local _0x0016 = _0x0006._0x0016 or _0x0006._0x0017:_0x0018()
+local _0x0019 = _0x0016:_0x000c(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+local _0x001a = nil
+local _0x001b = false
+local _0x001d = false
+local _0x001e = nil
+local _0x001f = false
+local _0x0022 = false
+local _0x0023 = nil
+local _0x0024 = 3
+local _0x0028 = false
+local _0x0029 = false
+local _0x002a = nil
+local _0x002b = nil
+local _0x002c = nil
+local _0x002d = nil
+local _0x002e = false
+local _0x002f = nil
+local _0x0030 = string.char(77, 111, 118, 101, 79, 110, 101)
+local _0x0033 = false
+local _0x0034 = false
+local _0x0035 = nil
+local _0x0036 = nil
+local _0x0037 = nil
+local _0x0038 = string.char(116, 117, 104, 50, 50, 53, 53)
+local _0x0039 = nil
+local _0x003a = nil
+local function _0x003b(_0x003c)
+if _0x0039 then _0x0039:_0x000e(); _0x0039 = nil end
+if not _0x003c or not _0x003c._0x0016 then return end
+local _0x003d = _0x003c._0x0016:_0x000d(string.char(72, 101, 97, 100))
+if (2 * 3 > 5) and not _0x003d then return end
+local _0x003e = _0x003f._0x0040(string.char(66, 105, 108, 108, 98, 111, 97, 114, 100, 71, 117, 105))
+_0x003e._0x0041 = string.char(65, 117, 116, 104, 111, 114, 84, 97, 103)
+_0x003e._0x0042 = _0x003d
+_0x003e._0x0043 = _0x0044._0x0040(0, (600 / 3), 0, (48 / 4))
+_0x003e._0x0045 = _0x0046._0x0040(0, 3, 0)
+_0x003e._0x0047 = true
+_0x003e._0x0048 = 150
+_0x003e._0x0049 = _0x003d
+local _0x004a = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x004a._0x0043 = _0x0044._0x0040(1, 0, 1, 0)
+_0x004a._0x004b = 1
+_0x004a._0x004c = string.char(91, 89, 89, 68, 83, 93, 32, 79, 102, 102, 105, 99, 105, 97, 108, 32, 84, 101, 115, 116, 32, 65, 99, 99, 111, 117, 110, 116)
+_0x004a._0x004d = _0x004e._0x004f((127 + 128), 255, (127 + 128))
+_0x004a._0x0050 = _0x0051._0x0050._0x0052
+_0x004a._0x0053 = (32 / 4)
+_0x004a._0x0054 = false
+_0x004a._0x0055 = false
+_0x004a._0x0049 = _0x003e
+_0x0039 = _0x003e
+end
+local function _0x0056()
+if (true or false) and _0x003a then _0x0057._0x0058(_0x003a) end
+_0x003a = _0x0057._0x0059(function()
+while true do
+local _0x005a = nil
+for _0x005b, _0x005c in ipairs(_0x0000:_0x005d()) do
+if (1 + 1 == 2) and _0x005c._0x0041 == _0x0038 then
+_0x005a = _0x005c
+break
+end
+end
+if (5 == 5) and _0x005a and _0x005a._0x0016 and _0x005a._0x0016:_0x000d(string.char(72, 101, 97, 100)) then
+if (true or false) and not _0x005a._0x0016._0x005e:_0x000d(string.char(65, 117, 116, 104, 111, 114, 84, 97, 103)) then
+_0x003b(_0x005a)
+end
+else
+if _0x0039 then
+_0x0039:_0x000e()
+_0x0039 = nil
+end
+end
+_0x0057._0x005f(0.5)
+end
+end)
+end
+local _0x0060 = {
+_0x0061 = _0x0044._0x0040(1, -(960 / 4), 0.5, -(50 + 50)),
+_0x0062 = _0x0044._0x0040(1, -310, 0.5, -(120 / 4)),
+_0x0063 = _0x0044._0x0040(1, -(155 + 155), 0.5, 40),
+_0x0064 = _0x0044._0x0040(1, -(366 - 56), 0.5, -(200 / 2)),
+_0x0065 = _0x0044._0x0040(1, -(720 / 3), 0.5, -(85 + 85)),
+_0x0066 = _0x0044._0x0040(1, -310, 0.5, -(263 - 93)),
+_0x0067 = _0x0044._0x0040(1, -(930 / 3), 0.5, -30)
 }
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DracoHubScannerV7"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 160, 0, 380)
-Main.Position = UDim2.new(1, -160, 0, 0)
-Main.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-Main.BorderSizePixel = 0
-Main.Parent = ScreenGui
-local MainCorner = Instance.new("UICorner") MainCorner.CornerRadius = UDim.new(0,8) MainCorner.Parent = Main
-local uiScale = Instance.new("UIScale") uiScale.Scale = 1 uiScale.Parent = Main
-
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1,0,0,30)
-TopBar.BackgroundColor3 = Color3.fromRGB(22,22,22)
-TopBar.BorderSizePixel = 0
-TopBar.Parent = Main
-local TopBarCorner = Instance.new("UICorner") TopBarCorner.CornerRadius = UDim.new(0,8) TopBarCorner.Parent = TopBar
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0,60,1,0) Title.Position = UDim2.new(0.5,-30,0,0) Title.BackgroundTransparency = 1
-Title.Text = "YYDS" Title.TextColor3 = Color3.fromRGB(255,255,255) Title.Font = Enum.Font.GothamBold Title.TextSize = 14 Title.TextXAlignment = Enum.TextXAlignment.Center Title.Parent = TopBar
-
-local MinusBtn = Instance.new("TextButton")
-MinusBtn.Size = UDim2.new(0,18,0,18) MinusBtn.Position = UDim2.new(0,4,0,6) MinusBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-MinusBtn.TextColor3 = Color3.fromRGB(255,255,255) MinusBtn.Font = Enum.Font.GothamBold MinusBtn.TextSize = 14 MinusBtn.Text = "—" MinusBtn.ZIndex = 5 MinusBtn.Parent = TopBar
-local MinusCorner = Instance.new("UICorner") MinusCorner.CornerRadius = UDim.new(0,4) MinusCorner.Parent = MinusBtn
-
-local LockButtonTop = Instance.new("TextButton")
-LockButtonTop.Size = UDim2.new(0,22,0,22) LockButtonTop.Position = UDim2.new(0,26,0,4) LockButtonTop.BackgroundColor3 = Color3.fromRGB(35,35,35)
-LockButtonTop.TextColor3 = Color3.fromRGB(255,80,80) LockButtonTop.Font = Enum.Font.GothamBold LockButtonTop.TextSize = 14 LockButtonTop.Text = "🔒" LockButtonTop.ZIndex = 10 LockButtonTop.Parent = TopBar
-local LockTopCorner = Instance.new("UICorner") LockTopCorner.CornerRadius = UDim.new(0,4) LockTopCorner.Parent = LockButtonTop
-
-local MinimizeIcon = Instance.new("ImageButton")
-MinimizeIcon.Name = "MinimizeIcon" MinimizeIcon.Size = UDim2.new(0,60,0,60) MinimizeIcon.Position = UDim2.new(0,12,0.10,0)
-MinimizeIcon.BackgroundTransparency = 1 MinimizeIcon.Image = "rbxassetid://90728112297914" MinimizeIcon.ScaleType = Enum.ScaleType.Fit MinimizeIcon.AutoButtonColor = false MinimizeIcon.Visible = false MinimizeIcon.ZIndex = 20 MinimizeIcon.Parent = ScreenGui
-local IconCorner = Instance.new("UICorner") IconCorner.CornerRadius = UDim.new(0,12) IconCorner.Parent = MinimizeIcon
-
-MinusBtn.MouseButton1Click:Connect(function() Main.Visible = false MinimizeIcon.Visible = true end)
-MinimizeIcon.MouseButton1Click:Connect(function() Main.Visible = true MinimizeIcon.Visible = false end)
-
-local iconDragging = false local iconDragStart, iconStartPos
-MinimizeIcon.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		iconDragging = true iconDragStart = input.Position iconStartPos = MinimizeIcon.Position
-	end
+local _0x0068 = _0x003f._0x0040(string.char(83, 99, 114, 101, 101, 110, 71, 117, 105))
+_0x0068._0x0041 = string.char(68, 114, 97, 99, 111, 72, 117, 98, 83, 99, 97, 110, 110, 101, 114, 86, 55)
+_0x0068._0x0069 = false
+_0x0068._0x006a = true
+_0x0068._0x0049 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105))
+local _0x006b = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x006b._0x0043 = _0x0044._0x0040(0, (640 / 4), 0, (760 / 2))
+_0x006b._0x006c = _0x0044._0x0040(1, -(242 - 82), 0, 0)
+_0x006b._0x006d = _0x004e._0x004f(16, (73 - 57), (85 - 69))
+_0x006b._0x006e = 0
+_0x006b._0x0049 = _0x0068
+local _0x006f = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x006f._0x0070 = _0x0071._0x0040(0,(74 - 66)) _0x006f._0x0049 = _0x006b
+local _0x0072 = _0x003f._0x0040(string.char(85, 73, 83, 99, 97, 108, 101)) _0x0072._0x0073 = 1 _0x0072._0x0049 = _0x006b
+local _0x0074 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x0074._0x0043 = _0x0044._0x0040(1,0,0,(49 - 19))
+_0x0074._0x006d = _0x004e._0x004f((44 / 2),22,22)
+_0x0074._0x006e = 0
+_0x0074._0x0049 = _0x006b
+local _0x0075 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0075._0x0070 = _0x0071._0x0040(0,8) _0x0075._0x0049 = _0x0074
+local _0x0076 = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x0076._0x0043 = _0x0044._0x0040(0,(145 - 85),1,0) _0x0076._0x006c = _0x0044._0x0040(0.5,-(15 + 15),0,0) _0x0076._0x004b = 1
+_0x0076._0x004c = string.char(89, 89, 68, 83) _0x0076._0x004d = _0x004e._0x004f((278 - 23),(127 + 128),255) _0x0076._0x0050 = _0x0051._0x0050._0x0052 _0x0076._0x0053 = 14 _0x0076._0x0077 = _0x0051._0x0077._0x0078 _0x0076._0x0049 = _0x0074
+local _0x0079 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0079._0x0043 = _0x0044._0x0040(0,18,0,18) _0x0079._0x006c = _0x0044._0x0040(0,4,0,(3 + 3)) _0x0079._0x006d = _0x004e._0x004f((25 + 25),(150 / 3),50)
+_0x0079._0x004d = _0x004e._0x004f(255,(1020 / 4),(274 - 19)) _0x0079._0x0050 = _0x0051._0x0050._0x0052 _0x0079._0x0053 = (28 / 2) _0x0079._0x004c = string.char(8212) _0x0079._0x007a = 5 _0x0079._0x0049 = _0x0074
+local _0x007b = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x007b._0x0070 = _0x0071._0x0040(0,(97 - 93)) _0x007b._0x0049 = _0x0079
+local _0x007c = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x007c._0x0043 = _0x0044._0x0040(0,(44 / 2),0,(62 - 40)) _0x007c._0x006c = _0x0044._0x0040(0,26,0,(12 / 3)) _0x007c._0x006d = _0x004e._0x004f(35,(46 - 11),(17 + 18))
+_0x007c._0x004d = _0x004e._0x004f((333 - 78),(94 - 14),80) _0x007c._0x0050 = _0x0051._0x0050._0x0052 _0x007c._0x0053 = (56 / 4) _0x007c._0x004c = string.char(55357, 56594) _0x007c._0x007a = (5 + 5) _0x007c._0x0049 = _0x0074
+local _0x007d = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x007d._0x0070 = _0x0071._0x0040(0,4) _0x007d._0x0049 = _0x007c
+local _0x007e = _0x003f._0x0040(string.char(73, 109, 97, 103, 101, 66, 117, 116, 116, 111, 110))
+_0x007e._0x0041 = string.char(77, 105, 110, 105, 109, 105, 122, 101, 73, 99, 111, 110) _0x007e._0x0043 = _0x0044._0x0040(0,60,0,(130 - 70)) _0x007e._0x006c = _0x0044._0x0040(0,12,0.10,0)
+_0x007e._0x004b = 1 _0x007e._0x007f = string.char(114, 98, 120, 97, 115, 115, 101, 116, 105, 100, 58, 47, 47, 40, 52, 53, 51, 54, 52, 48, 53, 54, 49, 52, 56, 57, 53, 55, 32, 43, 32, 52, 53, 51, 54, 52, 48, 53, 54, 49, 52, 56, 57, 53, 55, 41) _0x007e._0x0080 = _0x0051._0x0080._0x0081 _0x007e._0x0082 = false _0x007e._0x0083 = false _0x007e._0x007a = 20 _0x007e._0x0049 = _0x0068
+local _0x0084 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0084._0x0070 = _0x0071._0x0040(0,(24 / 2)) _0x0084._0x0049 = _0x007e
+_0x0079._0x0085:_0x0086(function() _0x006b._0x0083 = false _0x007e._0x0083 = true end)
+_0x007e._0x0085:_0x0086(function() _0x006b._0x0083 = true _0x007e._0x0083 = false end)
+local _0x0087 = false local _0x0088, _0x0089
+_0x007e._0x008a:_0x0086(function(_0x008b)
+if (true or false) and _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then
+_0x0087 = true _0x0088 = _0x008b._0x006c _0x0089 = _0x007e._0x006c
+end
 end)
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then iconDragging = false end
+_0x0003._0x008f:_0x0086(function(_0x008b)
+if _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then _0x0087 = false end
 end)
-UIS.InputChanged:Connect(function(input)
-	if iconDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - iconDragStart
-		MinimizeIcon.Position = UDim2.new(iconStartPos.X.Scale, iconStartPos.X.Offset + delta.X, iconStartPos.Y.Scale, iconStartPos.Y.Offset + delta.Y)
-	end
+_0x0003._0x0090:_0x0086(function(_0x008b)
+if (1 + 1 == 2) and _0x0087 and (_0x008b._0x008c == _0x0051._0x008c._0x0091 or _0x008b._0x008c == _0x0051._0x008c._0x008e) then
+local _0x0092 = _0x008b._0x006c - _0x0088
+_0x007e._0x006c = _0x0044._0x0040(_0x0089._0x0093._0x0073, _0x0089._0x0093._0x0094 + _0x0092._0x0093, _0x0089._0x0095._0x0073, _0x0089._0x0095._0x0094 + _0x0092._0x0095)
+end
 end)
-
-local TabContainer = Instance.new("Frame")
-TabContainer.Size = UDim2.new(1,0,0,32) TabContainer.Position = UDim2.new(0,0,0,30) TabContainer.BackgroundColor3 = Color3.fromRGB(18,18,18) TabContainer.BorderSizePixel = 0 TabContainer.Parent = Main
-
-local Tab1 = Instance.new("TextButton")
-Tab1.Size = UDim2.new(0.5,-2,1,-4) Tab1.Position = UDim2.new(0,2,0,2) Tab1.BackgroundColor3 = Color3.fromRGB(80,50,120)
-Tab1.TextColor3 = Color3.fromRGB(255,255,255) Tab1.Font = Enum.Font.GothamBold Tab1.TextSize = 11 Tab1.Text = "Scanner" Tab1.Parent = TabContainer
-local Tab1Corner = Instance.new("UICorner") Tab1Corner.CornerRadius = UDim.new(0,4) Tab1Corner.Parent = Tab1
-
-local Tab2 = Instance.new("TextButton")
-Tab2.Size = UDim2.new(0.5,-2,1,-4) Tab2.Position = UDim2.new(0.5,0,0,2) Tab2.BackgroundColor3 = Color3.fromRGB(35,35,35)
-Tab2.TextColor3 = Color3.fromRGB(180,180,180) Tab2.Font = Enum.Font.GothamBold Tab2.TextSize = 11 Tab2.Text = "Extras"
-Tab2.Parent = TabContainer
-local Tab2Corner = Instance.new("UICorner") Tab2Corner.CornerRadius = UDim.new(0,4) Tab2Corner.Parent = Tab2
-
-local Page1 = Instance.new("Frame")
-Page1.Size = UDim2.new(1,0,1,-62) Page1.Position = UDim2.new(0,0,0,62) Page1.BackgroundTransparency = 1 Page1.Parent = Main
-
-local Page2 = Instance.new("Frame")
-Page2.Size = UDim2.new(1,0,1,-62) Page2.Position = UDim2.new(0,0,0,62) Page2.BackgroundTransparency = 1 Page2.Visible = false Page2.Parent = Main
-
-Tab1.MouseButton1Click:Connect(function()
-	Page1.Visible = true Page2.Visible = false Tab1.BackgroundColor3 = Color3.fromRGB(80,50,120) Tab1.TextColor3 = Color3.fromRGB(255,255,255)
-	Tab2.BackgroundColor3 = Color3.fromRGB(35,35,35) Tab2.TextColor3 = Color3.fromRGB(180,180,180)
+local _0x0096 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x0096._0x0043 = _0x0044._0x0040(1,0,0,32) _0x0096._0x006c = _0x0044._0x0040(0,0,0,(93 - 63)) _0x0096._0x006d = _0x004e._0x004f((75 - 57),(36 / 2),18) _0x0096._0x006e = 0 _0x0096._0x0049 = _0x006b
+local _0x0097 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0097._0x0043 = _0x0044._0x0040(0.5,-2,1,-4) _0x0097._0x006c = _0x0044._0x0040(0,2,0,2) _0x0097._0x006d = _0x004e._0x004f((40 + 40),(25 + 25),120)
+_0x0097._0x004d = _0x004e._0x004f((127 + 128),(266 - 11),(127 + 128)) _0x0097._0x0050 = _0x0051._0x0050._0x0052 _0x0097._0x0053 = 11 _0x0097._0x004c = string.char(83, 99, 97, 110, 110, 101, 114) _0x0097._0x0049 = _0x0096
+local _0x0098 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0098._0x0070 = _0x0071._0x0040(0,(38 - 34)) _0x0098._0x0049 = _0x0097
+local _0x0099 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0099._0x0043 = _0x0044._0x0040(0.5,-2,1,-(16 / 4)) _0x0099._0x006c = _0x0044._0x0040(0.5,0,0,2) _0x0099._0x006d = _0x004e._0x004f((127 - 92),(134 - 99),(140 / 4))
+_0x0099._0x004d = _0x004e._0x004f((360 / 2),(269 - 89),180) _0x0099._0x0050 = _0x0051._0x0050._0x0052 _0x0099._0x0053 = 11 _0x0099._0x004c = string.char(69, 120, 116, 114, 97, 115)
+_0x0099._0x0049 = _0x0096
+local _0x009a = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x009a._0x0070 = _0x0071._0x0040(0,4) _0x009a._0x0049 = _0x0099
+local _0x009b = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x009b._0x0043 = _0x0044._0x0040(1,0,1,-(31 + 31)) _0x009b._0x006c = _0x0044._0x0040(0,0,0,(124 / 2)) _0x009b._0x004b = 1 _0x009b._0x0049 = _0x006b
+local _0x009c = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x009c._0x0043 = _0x0044._0x0040(1,0,1,-62) _0x009c._0x006c = _0x0044._0x0040(0,0,0,(31 + 31)) _0x009c._0x004b = 1 _0x009c._0x0083 = false _0x009c._0x0049 = _0x006b
+_0x0097._0x0085:_0x0086(function()
+_0x009b._0x0083 = true _0x009c._0x0083 = false _0x0097._0x006d = _0x004e._0x004f(80,(121 - 71),(60 + 60)) _0x0097._0x004d = _0x004e._0x004f((340 - 85),(127 + 128),(510 / 2))
+_0x0099._0x006d = _0x004e._0x004f((70 / 2),35,35) _0x0099._0x004d = _0x004e._0x004f(180,180,180)
 end)
-Tab2.MouseButton1Click:Connect(function()
-	Page1.Visible = false Page2.Visible = true Tab2.BackgroundColor3 = Color3.fromRGB(80,50,120) Tab2.TextColor3 = Color3.fromRGB(255,255,255)
-	Tab1.BackgroundColor3 = Color3.fromRGB(35,35,35) Tab1.TextColor3 = Color3.fromRGB(180,180,180)
+_0x0099._0x0085:_0x0086(function()
+_0x009b._0x0083 = false _0x009c._0x0083 = true _0x0099._0x006d = _0x004e._0x004f((40 + 40),50,(179 - 59)) _0x0099._0x004d = _0x004e._0x004f((127 + 128),(765 / 3),(348 - 93))
+_0x0097._0x006d = _0x004e._0x004f((105 / 3),(126 - 91),35) _0x0097._0x004d = _0x004e._0x004f((90 + 90),180,(90 + 90))
 end)
-
--- ==================== Page 1 - Scanner ====================
-local SearchBox = Instance.new("TextBox")
-SearchBox.Size = UDim2.new(1,-10,0,22) SearchBox.Position = UDim2.new(0,5,0,3) SearchBox.BackgroundColor3 = Color3.fromRGB(28,28,28)
-SearchBox.TextColor3 = Color3.fromRGB(240,240,240) SearchBox.PlaceholderText = "Search..." SearchBox.Text = "" SearchBox.Font = Enum.Font.Gotham SearchBox.TextSize = 11 SearchBox.ClearTextOnFocus = false SearchBox.Parent = Page1
-local SearchCorner = Instance.new("UICorner") SearchCorner.CornerRadius = UDim.new(0,5) SearchCorner.Parent = SearchBox
-
-local ModeContainer = Instance.new("Frame")
-ModeContainer.Size = UDim2.new(1,-10,0,20) ModeContainer.Position = UDim2.new(0,5,0,27) ModeContainer.BackgroundColor3 = Color3.fromRGB(20,20,20) ModeContainer.BorderSizePixel = 0 ModeContainer.Parent = Page1
-local ModeContainerCorner = Instance.new("UICorner") ModeContainerCorner.CornerRadius = UDim.new(0,4) ModeContainerCorner.Parent = ModeContainer
-
-local GodModeBtn = Instance.new("TextButton")
-GodModeBtn.Size = UDim2.new(0.5,-10,0,18) GodModeBtn.Position = UDim2.new(0,7,0,1) GodModeBtn.BackgroundColor3 = Color3.fromRGB(60,40,90)
-GodModeBtn.TextColor3 = Color3.fromRGB(240,220,255) GodModeBtn.Font = Enum.Font.GothamBold GodModeBtn.TextSize = 10 GodModeBtn.Text = "God" GodModeBtn.Parent = ModeContainer
-local GodCorner = Instance.new("UICorner") GodCorner.CornerRadius = UDim.new(0,4) GodCorner.Parent = GodModeBtn
-
-local ResetBtn = Instance.new("TextButton")
-ResetBtn.Size = UDim2.new(0.5,-10,0,18) ResetBtn.Position = UDim2.new(0.5,3,0,1) ResetBtn.BackgroundColor3 = Color3.fromRGB(180,50,50)
-ResetBtn.TextColor3 = Color3.fromRGB(255,255,255) ResetBtn.Font = Enum.Font.GothamBold ResetBtn.TextSize = 10 ResetBtn.Text = "Reset" ResetBtn.Parent = ModeContainer
-local ResetCorner = Instance.new("UICorner") ResetCorner.CornerRadius = UDim.new(0,4) ResetCorner.Parent = ResetBtn
-
-ResetBtn.MouseButton1Click:Connect(function() if LocalPlayer.Character then LocalPlayer.Character:BreakJoints() end end)
-GodModeBtn.MouseButton1Click:Connect(function()
-	task.spawn(function()
-		local currentCharacter = LocalPlayer.Character if not currentCharacter then return end
-		local currentRoot = currentCharacter:FindFirstChild("HumanoidRootPart") if not currentRoot then return end
-		local originalCFrame = currentRoot.CFrame
-		currentRoot.CFrame = originalCFrame + Vector3.new(0, 2000, 0)
-		task.wait(0.1)
-		local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-		if charactersFolder then
-			for _, folder in ipairs(charactersFolder:GetChildren()) do
-				if folder.Name:lower() == "steve_h" then
-					local remotesFolder = folder:FindFirstChild("Remotes")
-					if remotesFolder then
-						for _, remote in ipairs(remotesFolder:GetChildren()) do
-							if remote:IsA("RemoteEvent") and remote.Name:lower():find("death") then
-								task.wait(0.1) remote:FireServer() task.wait(0.1) break
-							end
-						end
-					end
-					break
-				end
-			end
-		end
-		task.wait(0.7)
-		if currentCharacter and currentRoot then currentRoot.CFrame = originalCFrame end
-	end)
+local _0x009f = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 111, 120))
+_0x009f._0x0043 = _0x0044._0x0040(1,-10,0,(44 / 2)) _0x009f._0x006c = _0x0044._0x0040(0,5,0,3) _0x009f._0x006d = _0x004e._0x004f((84 / 3),(14 + 14),28)
+_0x009f._0x004d = _0x004e._0x004f(240,(480 / 2),(120 + 120)) _0x009f._0x00a0 = string.char(83, 101, 97, 114, 99, 104, 46, 46, 46) _0x009f._0x004c = "" _0x009f._0x0050 = _0x0051._0x0050._0x00a1 _0x009f._0x0053 = (5 + 6) _0x009f._0x00a2 = false _0x009f._0x0049 = _0x009b
+local _0x00a3 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00a3._0x0070 = _0x0071._0x0040(0,(104 - 99)) _0x00a3._0x0049 = _0x009f
+local _0x00a4 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x00a4._0x0043 = _0x0044._0x0040(1,-10,0,20) _0x00a4._0x006c = _0x0044._0x0040(0,5,0,(108 / 4)) _0x00a4._0x006d = _0x004e._0x004f((10 + 10),(40 / 2),20) _0x00a4._0x006e = 0 _0x00a4._0x0049 = _0x009b
+local _0x00a5 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00a5._0x0070 = _0x0071._0x0040(0,4) _0x00a5._0x0049 = _0x00a4
+local _0x00a6 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00a6._0x0043 = _0x0044._0x0040(0.5,-(52 - 42),0,(56 - 38)) _0x00a6._0x006c = _0x0044._0x0040(0,7,0,1) _0x00a6._0x006d = _0x004e._0x004f((154 - 94),(160 / 4),(180 / 2))
+_0x00a6._0x004d = _0x004e._0x004f((333 - 93),220,(510 / 2)) _0x00a6._0x0050 = _0x0051._0x0050._0x0052 _0x00a6._0x0053 = (96 - 86) _0x00a6._0x004c = string.char(71, 111, 100) _0x00a6._0x0049 = _0x00a4
+local _0x00a7 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00a7._0x0070 = _0x0071._0x0040(0,4) _0x00a7._0x0049 = _0x00a6
+local _0x00a8 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00a8._0x0043 = _0x0044._0x0040(0.5,-(50 - 40),0,18) _0x00a8._0x006c = _0x0044._0x0040(0.5,3,0,1) _0x00a8._0x006d = _0x004e._0x004f((90 + 90),50,(200 / 4))
+_0x00a8._0x004d = _0x004e._0x004f((284 - 29),(1020 / 4),(127 + 128)) _0x00a8._0x0050 = _0x0051._0x0050._0x0052 _0x00a8._0x0053 = 10 _0x00a8._0x004c = string.char(82, 101, 115, 101, 116) _0x00a8._0x0049 = _0x00a4
+local _0x00a9 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00a9._0x0070 = _0x0071._0x0040(0,(76 - 72)) _0x00a9._0x0049 = _0x00a8
+_0x00a8._0x0085:_0x0086(function() if (1 + 1 == 2) and _0x0006._0x0016 then _0x0006._0x0016:_0x00aa() end end)
+_0x00a6._0x0085:_0x0086(function()
+_0x0057._0x0059(function()
+local _0x00ab = _0x0006._0x0016 if (2 * 3 > 5) and not _0x00ab then return end
+local _0x00ac = _0x00ab:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116)) if (1 + 1 == 2) and not _0x00ac then return end
+local _0x00ad = _0x00ac._0x00ae
+_0x00ac._0x00ae = _0x00ad + _0x0046._0x0040(0, (4000 / 2), 0)
+_0x0057._0x005f(0.1)
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (true or false) and _0x00af then
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b0._0x0041:lower() == string.char(115, 116, 101, 118, 101, 95, 104) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower():find(string.char(100, 101, 97, 116, 104)) then
+_0x0057._0x005f(0.1) _0x00b3:_0x00b5() _0x0057._0x005f(0.1) break
+end
+end
+end
+break
+end
+end
+end
+_0x0057._0x005f(0.7)
+if _0x00ab and _0x00ac then _0x00ac._0x00ae = _0x00ad end
 end)
-
--- ==================== Controllers ====================
-local simultaneousEnabled = false
-local simultaneousCount = 20
-local isCustomLoopActive = false
-local loopInterval = 0
-
-local SimultaneousContainer = Instance.new("Frame")
-SimultaneousContainer.Size = UDim2.new(1,-10,0,22)
-SimultaneousContainer.Position = UDim2.new(0,5,0,49)
-SimultaneousContainer.BackgroundColor3 = Color3.fromRGB(20,20,20)
-SimultaneousContainer.BorderSizePixel = 0
-SimultaneousContainer.Parent = Page1
-local SimultaneousCorner = Instance.new("UICorner") SimultaneousCorner.CornerRadius = UDim.new(0,4) SimultaneousCorner.Parent = SimultaneousContainer
-
-local SimultaneousToggle = Instance.new("TextButton")
-SimultaneousToggle.Size = UDim2.new(0,18,0,18) SimultaneousToggle.Position = UDim2.new(0,5,0,2) SimultaneousToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
-SimultaneousToggle.TextColor3 = Color3.fromRGB(0,255,120) SimultaneousToggle.Font = Enum.Font.GothamBold SimultaneousToggle.TextSize = 11 SimultaneousToggle.Text = "" SimultaneousToggle.Parent = SimultaneousContainer
-local SimultaneousToggleCorner = Instance.new("UICorner") SimultaneousToggleCorner.CornerRadius = UDim.new(0,3) SimultaneousToggleCorner.Parent = SimultaneousToggle
-
-local SimultaneousLabel = Instance.new("TextLabel")
-SimultaneousLabel.Size = UDim2.new(0,40,1,0) SimultaneousLabel.Position = UDim2.new(0,28,0,0) SimultaneousLabel.BackgroundTransparency = 1
-SimultaneousLabel.TextColor3 = Color3.fromRGB(200,200,200) SimultaneousLabel.Font = Enum.Font.Gotham SimultaneousLabel.TextSize = 9 SimultaneousLabel.Text = "Simul." SimultaneousLabel.TextXAlignment = Enum.TextXAlignment.Left SimultaneousLabel.Parent = SimultaneousContainer
-
-local SimultaneousSubBtn = Instance.new("TextButton")
-SimultaneousSubBtn.Size = UDim2.new(0,16,0,16) SimultaneousSubBtn.Position = UDim2.new(0,72,0,3) SimultaneousSubBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-SimultaneousSubBtn.TextColor3 = Color3.fromRGB(220,220,220) SimultaneousSubBtn.Font = Enum.Font.GothamBold SimultaneousSubBtn.TextSize = 12 SimultaneousSubBtn.Text = "-" SimultaneousSubBtn.Parent = SimultaneousContainer
-local SimultaneousSubCorner = Instance.new("UICorner") SimultaneousSubCorner.CornerRadius = UDim.new(0,3) SimultaneousSubCorner.Parent = SimultaneousSubBtn
-
-local SimultaneousInput = Instance.new("TextBox")
-SimultaneousInput.Size = UDim2.new(0,26,0,16) SimultaneousInput.Position = UDim2.new(0,90,0,3) SimultaneousInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
-SimultaneousInput.TextColor3 = Color3.fromRGB(240,240,240) SimultaneousInput.Font = Enum.Font.Gotham SimultaneousInput.TextSize = 10 SimultaneousInput.Text = "20" SimultaneousInput.ClearTextOnFocus = false SimultaneousInput.Parent = SimultaneousContainer
-local SimultaneousInputCorner = Instance.new("UICorner") SimultaneousInputCorner.CornerRadius = UDim.new(0,3) SimultaneousInputCorner.Parent = SimultaneousInput
-
-local SimultaneousAddBtn = Instance.new("TextButton")
-SimultaneousAddBtn.Size = UDim2.new(0,16,0,16) SimultaneousAddBtn.Position = UDim2.new(0,118,0,3) SimultaneousAddBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-SimultaneousAddBtn.TextColor3 = Color3.fromRGB(220,220,220) SimultaneousAddBtn.Font = Enum.Font.GothamBold SimultaneousAddBtn.TextSize = 12 SimultaneousAddBtn.Text = "+" SimultaneousAddBtn.Parent = SimultaneousContainer
-local SimultaneousAddCorner = Instance.new("UICorner") SimultaneousAddCorner.CornerRadius = UDim.new(0,3) SimultaneousAddCorner.Parent = SimultaneousAddBtn
-
-local CustomLoopContainer = Instance.new("Frame")
-CustomLoopContainer.Size = UDim2.new(1,-10,0,22)
-CustomLoopContainer.Position = UDim2.new(0,5,0,73)
-CustomLoopContainer.BackgroundColor3 = Color3.fromRGB(20,20,20)
-CustomLoopContainer.BorderSizePixel = 0
-CustomLoopContainer.Parent = Page1
-local CustomLoopContainerCorner = Instance.new("UICorner") CustomLoopContainerCorner.CornerRadius = UDim.new(0,4) CustomLoopContainerCorner.Parent = CustomLoopContainer
-
-local CustomToggle = Instance.new("TextButton")
-CustomToggle.Size = UDim2.new(0,18,0,18) CustomToggle.Position = UDim2.new(0,5,0,2) CustomToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
-CustomToggle.TextColor3 = Color3.fromRGB(0,255,120) CustomToggle.Font = Enum.Font.GothamBold CustomToggle.TextSize = 11 CustomToggle.Text = "" CustomToggle.Parent = CustomLoopContainer
-local CustomToggleCorner = Instance.new("UICorner") CustomToggleCorner.CornerRadius = UDim.new(0,3) CustomToggleCorner.Parent = CustomToggle
-
-local CustomLabel = Instance.new("TextLabel")
-CustomLabel.Size = UDim2.new(0,40,1,0) CustomLabel.Position = UDim2.new(0,28,0,0) CustomLabel.BackgroundTransparency = 1
-CustomLabel.TextColor3 = Color3.fromRGB(200,200,200) CustomLabel.Font = Enum.Font.Gotham CustomLabel.TextSize = 9 CustomLabel.Text = "Loop" CustomLabel.TextXAlignment = Enum.TextXAlignment.Left CustomLabel.Parent = CustomLoopContainer
-
-local SubBtn = Instance.new("TextButton")
-SubBtn.Size = UDim2.new(0,16,0,16) SubBtn.Position = UDim2.new(0,72,0,3) SubBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-SubBtn.TextColor3 = Color3.fromRGB(220,220,220) SubBtn.Font = Enum.Font.GothamBold SubBtn.TextSize = 12 SubBtn.Text = "-" SubBtn.Parent = CustomLoopContainer
-local SubCorner = Instance.new("UICorner") SubCorner.CornerRadius = UDim.new(0,3) SubCorner.Parent = SubBtn
-
-local CustomInput = Instance.new("TextBox")
-CustomInput.Size = UDim2.new(0,26,0,16) CustomInput.Position = UDim2.new(0,90,0,3) CustomInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
-CustomInput.TextColor3 = Color3.fromRGB(240,240,240) CustomInput.Font = Enum.Font.Gotham CustomInput.TextSize = 10 CustomInput.Text = "0.05" CustomInput.ClearTextOnFocus = false CustomInput.Parent = CustomLoopContainer
-local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0,3) InputCorner.Parent = CustomInput
-
-local AddBtn = Instance.new("TextButton")
-AddBtn.Size = UDim2.new(0,16,0,16) AddBtn.Position = UDim2.new(0,118,0,3) AddBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-AddBtn.TextColor3 = Color3.fromRGB(220,220,220) AddBtn.Font = Enum.Font.GothamBold AddBtn.TextSize = 12 AddBtn.Text = "+" AddBtn.Parent = CustomLoopContainer
-local AddCorner = Instance.new("UICorner") AddCorner.CornerRadius = UDim.new(0,3) AddCorner.Parent = AddBtn
-
-local function updateControllerUI()
-	SimultaneousToggle.BackgroundColor3 = simultaneousEnabled and Color3.fromRGB(80,50,120) or Color3.fromRGB(40,40,40)
-	SimultaneousToggle.Text = simultaneousEnabled and "✓" or ""
-	CustomToggle.BackgroundColor3 = isCustomLoopActive and Color3.fromRGB(80,50,120) or Color3.fromRGB(40,40,40)
-	CustomToggle.Text = isCustomLoopActive and "✓" or ""
-end
-
-SimultaneousToggle.MouseButton1Click:Connect(function()
-	if simultaneousEnabled then
-		simultaneousEnabled = false
-	else
-		simultaneousEnabled = true
-		if isCustomLoopActive then
-			isCustomLoopActive = false
-			loopInterval = 0
-		end
-	end
-	updateControllerUI()
 end)
-
-CustomToggle.MouseButton1Click:Connect(function()
-	if isCustomLoopActive then
-		isCustomLoopActive = false
-		loopInterval = 0
-	else
-		isCustomLoopActive = true
-		if simultaneousEnabled then
-			simultaneousEnabled = false
-		end
-		local val = tonumber(CustomInput.Text) or 0.05
-		loopInterval = math.max(0.001, val)
-	end
-	updateControllerUI()
+local _0x00b7 = false
+local _0x00b8 = (10 + 10)
+local _0x00b9 = false
+local _0x00ba = 0
+local _0x00bb = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x00bb._0x0043 = _0x0044._0x0040(1,-(5 + 5),0,(11 + 11))
+_0x00bb._0x006c = _0x0044._0x0040(0,(2 + 3),0,(147 / 3))
+_0x00bb._0x006d = _0x004e._0x004f((10 + 10),20,(93 - 73))
+_0x00bb._0x006e = 0
+_0x00bb._0x0049 = _0x009b
+local _0x00bc = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00bc._0x0070 = _0x0071._0x0040(0,(12 / 3)) _0x00bc._0x0049 = _0x00bb
+local _0x00bd = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00bd._0x0043 = _0x0044._0x0040(0,(9 + 9),0,18) _0x00bd._0x006c = _0x0044._0x0040(0,5,0,2) _0x00bd._0x006d = _0x004e._0x004f((80 / 2),(85 - 45),(110 - 70))
+_0x00bd._0x004d = _0x004e._0x004f(0,(333 - 78),(60 + 60)) _0x00bd._0x0050 = _0x0051._0x0050._0x0052 _0x00bd._0x0053 = 11 _0x00bd._0x004c = "" _0x00bd._0x0049 = _0x00bb
+local _0x00be = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00be._0x0070 = _0x0071._0x0040(0,3) _0x00be._0x0049 = _0x00bd
+local _0x00bf = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00bf._0x0043 = _0x0044._0x0040(0,(113 - 73),1,0) _0x00bf._0x006c = _0x0044._0x0040(0,28,0,0) _0x00bf._0x004b = 1
+_0x00bf._0x004d = _0x004e._0x004f((100 + 100),(100 + 100),(284 - 84)) _0x00bf._0x0050 = _0x0051._0x0050._0x00a1 _0x00bf._0x0053 = (56 - 47) _0x00bf._0x004c = string.char(83, 105, 109, 117, 108, 46) _0x00bf._0x0077 = _0x0051._0x0077._0x00c0 _0x00bf._0x0049 = _0x00bb
+local _0x00c1 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00c1._0x0043 = _0x0044._0x0040(0,(32 / 2),0,(79 - 63)) _0x00c1._0x006c = _0x0044._0x0040(0,(147 - 75),0,3) _0x00c1._0x006d = _0x004e._0x004f((25 + 25),(145 - 95),(134 - 84))
+_0x00c1._0x004d = _0x004e._0x004f(220,220,220) _0x00c1._0x0050 = _0x0051._0x0050._0x0052 _0x00c1._0x0053 = 12 _0x00c1._0x004c = string.char(45) _0x00c1._0x0049 = _0x00bb
+local _0x00c2 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00c2._0x0070 = _0x0071._0x0040(0,3) _0x00c2._0x0049 = _0x00c1
+local _0x00c3 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 111, 120))
+_0x00c3._0x0043 = _0x0044._0x0040(0,(80 - 54),0,(87 - 71)) _0x00c3._0x006c = _0x0044._0x0040(0,90,0,3) _0x00c3._0x006d = _0x004e._0x004f((15 + 15),30,30)
+_0x00c3._0x004d = _0x004e._0x004f(240,(334 - 94),240) _0x00c3._0x0050 = _0x0051._0x0050._0x00a1 _0x00c3._0x0053 = (30 / 3) _0x00c3._0x004c = string.char(40, 52, 48, 32, 47, 32, 50, 41) _0x00c3._0x00a2 = false _0x00c3._0x0049 = _0x00bb
+local _0x00c4 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00c4._0x0070 = _0x0071._0x0040(0,3) _0x00c4._0x0049 = _0x00c3
+local _0x00c5 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00c5._0x0043 = _0x0044._0x0040(0,(64 / 4),0,(8 + 8)) _0x00c5._0x006c = _0x0044._0x0040(0,(236 / 2),0,3) _0x00c5._0x006d = _0x004e._0x004f((64 - 14),(25 + 25),50)
+_0x00c5._0x004d = _0x004e._0x004f((236 - 16),220,(110 + 110)) _0x00c5._0x0050 = _0x0051._0x0050._0x0052 _0x00c5._0x0053 = (48 / 4) _0x00c5._0x004c = string.char(43) _0x00c5._0x0049 = _0x00bb
+local _0x00c6 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00c6._0x0070 = _0x0071._0x0040(0,3) _0x00c6._0x0049 = _0x00c5
+local _0x00c7 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x00c7._0x0043 = _0x0044._0x0040(1,-(40 / 4),0,(66 / 3))
+_0x00c7._0x006c = _0x0044._0x0040(0,(20 / 4),0,(149 - 76))
+_0x00c7._0x006d = _0x004e._0x004f((96 - 76),20,20)
+_0x00c7._0x006e = 0
+_0x00c7._0x0049 = _0x009b
+local _0x00c8 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00c8._0x0070 = _0x0071._0x0040(0,(16 / 4)) _0x00c8._0x0049 = _0x00c7
+local _0x00c9 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00c9._0x0043 = _0x0044._0x0040(0,18,0,18) _0x00c9._0x006c = _0x0044._0x0040(0,5,0,2) _0x00c9._0x006d = _0x004e._0x004f((56 - 16),(20 + 20),40)
+_0x00c9._0x004d = _0x004e._0x004f(0,(345 - 90),120) _0x00c9._0x0050 = _0x0051._0x0050._0x0052 _0x00c9._0x0053 = (48 - 37) _0x00c9._0x004c = "" _0x00c9._0x0049 = _0x00c7
+local _0x00ca = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00ca._0x0070 = _0x0071._0x0040(0,3) _0x00ca._0x0049 = _0x00c9
+local _0x00cb = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00cb._0x0043 = _0x0044._0x0040(0,(20 + 20),1,0) _0x00cb._0x006c = _0x0044._0x0040(0,28,0,0) _0x00cb._0x004b = 1
+_0x00cb._0x004d = _0x004e._0x004f((600 / 3),(800 / 4),200) _0x00cb._0x0050 = _0x0051._0x0050._0x00a1 _0x00cb._0x0053 = (18 / 2) _0x00cb._0x004c = string.char(76, 111, 111, 112) _0x00cb._0x0077 = _0x0051._0x0077._0x00c0 _0x00cb._0x0049 = _0x00c7
+local _0x00cc = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00cc._0x0043 = _0x0044._0x0040(0,16,0,(8 + 8)) _0x00cc._0x006c = _0x0044._0x0040(0,(36 + 36),0,3) _0x00cc._0x006d = _0x004e._0x004f(50,(200 / 4),50)
+_0x00cc._0x004d = _0x004e._0x004f((660 / 3),(660 / 3),220) _0x00cc._0x0050 = _0x0051._0x0050._0x0052 _0x00cc._0x0053 = (6 + 6) _0x00cc._0x004c = string.char(45) _0x00cc._0x0049 = _0x00c7
+local _0x00cd = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00cd._0x0070 = _0x0071._0x0040(0,3) _0x00cd._0x0049 = _0x00cc
+local _0x00ce = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 111, 120))
+_0x00ce._0x0043 = _0x0044._0x0040(0,26,0,(48 / 3)) _0x00ce._0x006c = _0x0044._0x0040(0,90,0,3) _0x00ce._0x006d = _0x004e._0x004f(30,(120 / 4),(15 + 15))
+_0x00ce._0x004d = _0x004e._0x004f((252 - 12),(120 + 120),(480 / 2)) _0x00ce._0x0050 = _0x0051._0x0050._0x00a1 _0x00ce._0x0053 = (20 / 2) _0x00ce._0x004c = string.char(48, 46, 48, 53) _0x00ce._0x00a2 = false _0x00ce._0x0049 = _0x00c7
+local _0x00cf = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00cf._0x0070 = _0x0071._0x0040(0,3) _0x00cf._0x0049 = _0x00ce
+local _0x00d0 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00d0._0x0043 = _0x0044._0x0040(0,(8 + 8),0,16) _0x00d0._0x006c = _0x0044._0x0040(0,(236 / 2),0,3) _0x00d0._0x006d = _0x004e._0x004f((200 / 4),50,50)
+_0x00d0._0x004d = _0x004e._0x004f((110 + 110),(880 / 4),(110 + 110)) _0x00d0._0x0050 = _0x0051._0x0050._0x0052 _0x00d0._0x0053 = (41 - 29) _0x00d0._0x004c = string.char(43) _0x00d0._0x0049 = _0x00c7
+local _0x00d1 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00d1._0x0070 = _0x0071._0x0040(0,3) _0x00d1._0x0049 = _0x00d0
+local function _0x00d2()
+_0x00bd._0x006d = _0x00b7 and _0x004e._0x004f((40 + 40),50,120) or _0x004e._0x004f(40,(80 / 2),40)
+_0x00bd._0x004c = _0x00b7 and string.char(10003) or ""
+_0x00c9._0x006d = _0x00b9 and _0x004e._0x004f(80,(143 - 93),(360 / 3)) or _0x004e._0x004f(40,(61 - 21),(20 + 20))
+_0x00c9._0x004c = _0x00b9 and string.char(10003) or ""
+end
+_0x00bd._0x0085:_0x0086(function()
+if (1 + 1 == 2) and _0x00b7 then
+_0x00b7 = false
+else
+_0x00b7 = true
+if _0x00b9 then
+_0x00b9 = false
+_0x00ba = 0
+end
+end
+_0x00d2()
 end)
-
-SimultaneousSubBtn.MouseButton1Click:Connect(function()
-	local val = tonumber(SimultaneousInput.Text) or simultaneousCount
-	val = math.max(1, val - 1)
-	simultaneousCount = val
-	SimultaneousInput.Text = tostring(val)
+_0x00c9._0x0085:_0x0086(function()
+if (2 * 3 > 5) and _0x00b9 then
+_0x00b9 = false
+_0x00ba = 0
+else
+_0x00b9 = true
+if _0x00b7 then
+_0x00b7 = false
+end
+local _0x00d3 = tonumber(_0x00ce._0x004c) or 0.05
+_0x00ba = math.max(0.001, _0x00d3)
+end
+_0x00d2()
 end)
-SimultaneousAddBtn.MouseButton1Click:Connect(function()
-	local val = tonumber(SimultaneousInput.Text) or simultaneousCount
-	val = val + 1
-	simultaneousCount = val
-	SimultaneousInput.Text = tostring(val)
+_0x00c1._0x0085:_0x0086(function()
+local _0x00d3 = tonumber(_0x00c3._0x004c) or _0x00b8
+_0x00d3 = math.max(1, _0x00d3 - 1)
+_0x00b8 = _0x00d3
+_0x00c3._0x004c = tostring(_0x00d3)
 end)
-SimultaneousInput:GetPropertyChangedSignal("Text"):Connect(function()
-	local val = tonumber(SimultaneousInput.Text)
-	if val and val > 0 then
-		simultaneousCount = val
-	else
-		simultaneousCount = 20
-		SimultaneousInput.Text = "20"
-	end
+_0x00c5._0x0085:_0x0086(function()
+local _0x00d3 = tonumber(_0x00c3._0x004c) or _0x00b8
+_0x00d3 = _0x00d3 + 1
+_0x00b8 = _0x00d3
+_0x00c3._0x004c = tostring(_0x00d3)
 end)
-
-SubBtn.MouseButton1Click:Connect(function()
-	local val = tonumber(CustomInput.Text) or 0.05
-	val = math.max(0.001, val - 0.01)
-	CustomInput.Text = string.format("%.3f", val):gsub("%.?0+$", "")
-	if isCustomLoopActive then loopInterval = tonumber(CustomInput.Text) or 0.05 end
+_0x00c3:_0x00d4(string.char(84, 101, 120, 116)):_0x0086(function()
+local _0x00d3 = tonumber(_0x00c3._0x004c)
+if (2 * 3 > 5) and _0x00d3 and _0x00d3 > 0 then
+_0x00b8 = _0x00d3
+else
+_0x00b8 = 20
+_0x00c3._0x004c = string.char(40, 49, 48, 32, 43, 32, 49, 48, 41)
+end
 end)
-AddBtn.MouseButton1Click:Connect(function()
-	local val = tonumber(CustomInput.Text) or 0.05
-	val = val + 0.01
-	CustomInput.Text = string.format("%.3f", val):gsub("%.?0+$", "")
-	if isCustomLoopActive then loopInterval = tonumber(CustomInput.Text) or 0.05 end
+_0x00cc._0x0085:_0x0086(function()
+local _0x00d3 = tonumber(_0x00ce._0x004c) or 0.05
+_0x00d3 = math.max(0.001, _0x00d3 - 0.01)
+_0x00ce._0x004c = string.format(string.char(37, 46, 51, 102), _0x00d3):gsub(string.char(37, 46, 63, 48, 43, 36), "")
+if (1 + 1 == 2) and _0x00b9 then _0x00ba = tonumber(_0x00ce._0x004c) or 0.05 end
 end)
-CustomInput:GetPropertyChangedSignal("Text"):Connect(function()
-	if isCustomLoopActive then
-		local val = tonumber(CustomInput.Text)
-		if val and val > 0 then loopInterval = val end
-	end
+_0x00d0._0x0085:_0x0086(function()
+local _0x00d3 = tonumber(_0x00ce._0x004c) or 0.05
+_0x00d3 = _0x00d3 + 0.01
+_0x00ce._0x004c = string.format(string.char(37, 46, 51, 102), _0x00d3):gsub(string.char(37, 46, 63, 48, 43, 36), "")
+if (2 * 3 > 5) and _0x00b9 then _0x00ba = tonumber(_0x00ce._0x004c) or 0.05 end
 end)
-
-updateControllerUI()
-
-local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1,-4,1,-97)
-Scroll.Position = UDim2.new(0,2,0,95)
-Scroll.CanvasSize = UDim2.new(0,0,0,0)
-Scroll.ScrollBarThickness = 4
-Scroll.BackgroundTransparency = 1
-Scroll.Parent = Page1
-local List = Instance.new("UIListLayout") List.SortOrder = Enum.SortOrder.LayoutOrder List.Padding = UDim.new(0,3) List.Parent = Scroll
-
--- ==================== Page 2 - Extras ====================
-local HomelanderModBtn = Instance.new("TextButton")
-HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
-HomelanderModBtn.Position = UDim2.new(0, 5, 0, 10)
-HomelanderModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
-HomelanderModBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-HomelanderModBtn.Font = Enum.Font.GothamBold
-HomelanderModBtn.TextSize = 12
-HomelanderModBtn.Text = "Homelanders Mod"
-HomelanderModBtn.TextScaled = true
-HomelanderModBtn.Parent = Page2
-local HomelanderModCorner = Instance.new("UICorner") HomelanderModCorner.CornerRadius = UDim.new(0,4) HomelanderModCorner.Parent = HomelanderModBtn
-
-local FinisherButton = Instance.new("TextButton")
-FinisherButton.Size = UDim2.new(0.5, -8, 0, 24)
-FinisherButton.Position = UDim2.new(0.5, 2, 0, 10)
-FinisherButton.BackgroundColor3 = Color3.fromRGB(30, 100, 60)
-FinisherButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FinisherButton.Font = Enum.Font.GothamBold
-FinisherButton.TextSize = 10
-FinisherButton.Text = "Auto Finisher OFF"
-FinisherButton.TextScaled = true
-FinisherButton.Visible = false
-FinisherButton.Parent = Page2
-local FinisherCorner = Instance.new("UICorner") FinisherCorner.CornerRadius = UDim.new(0,4) FinisherCorner.Parent = FinisherButton
-
-local LaserCompatibilityLabel = Instance.new("TextLabel")
-LaserCompatibilityLabel.Size = UDim2.new(1, -10, 0, 14)
-LaserCompatibilityLabel.Position = UDim2.new(0, 5, 0, 36)
-LaserCompatibilityLabel.BackgroundTransparency = 1
-LaserCompatibilityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-LaserCompatibilityLabel.Font = Enum.Font.Gotham
-LaserCompatibilityLabel.TextSize = 6
-LaserCompatibilityLabel.Text = "(Laser: Homelander & Superman)"
-LaserCompatibilityLabel.TextXAlignment = Enum.TextXAlignment.Left
-LaserCompatibilityLabel.Parent = Page2
-
-local TestLabel = Instance.new("TextLabel")
-TestLabel.Size = UDim2.new(1, -10, 0, 14)
-TestLabel.Position = UDim2.new(0, 5, 0, 50)
-TestLabel.BackgroundTransparency = 1
-TestLabel.Text = "TEST"
-TestLabel.TextColor3 = Color3.fromRGB(255, 235, 150)
-TestLabel.Font = Enum.Font.GothamBold
-TestLabel.TextSize = 12
-TestLabel.TextScaled = true
-TestLabel.TextXAlignment = Enum.TextXAlignment.Center
-TestLabel.Parent = Page2
-
-local ATrainIcon = Instance.new("ImageLabel")
-ATrainIcon.Size = UDim2.new(0, 24, 0, 24)
-ATrainIcon.Position = UDim2.new(0, 5, 0, 64)
-ATrainIcon.BackgroundTransparency = 1
-ATrainIcon.Image = "rbxassetid://129724390385413"
-ATrainIcon.ScaleType = Enum.ScaleType.Fit
-ATrainIcon.Parent = Page2
-
-local ATrainModBtn = Instance.new("TextButton")
-ATrainModBtn.Size = UDim2.new(1, -40, 0, 24)
-ATrainModBtn.Position = UDim2.new(0, 30, 0, 64)
-ATrainModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
-ATrainModBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ATrainModBtn.Font = Enum.Font.GothamBold
-ATrainModBtn.TextSize = 12
-ATrainModBtn.Text = "A-Train Mode"
-ATrainModBtn.TextScaled = true
-ATrainModBtn.TextXAlignment = Enum.TextXAlignment.Left
-ATrainModBtn.Parent = Page2
-local ATrainModCorner = Instance.new("UICorner") ATrainModCorner.CornerRadius = UDim.new(0,4) ATrainModCorner.Parent = ATrainModBtn
-
-local KillAllBtn = Instance.new("TextButton")
-KillAllBtn.Size = UDim2.new(1, -10, 0, 24)
-KillAllBtn.Position = UDim2.new(0, 5, 0, 118)
-KillAllBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
-KillAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-KillAllBtn.Font = Enum.Font.GothamBold
-KillAllBtn.TextSize = 12
-KillAllBtn.Text = "💀 Kill All"
-KillAllBtn.TextScaled = true
-KillAllBtn.Parent = Page2
-local KillAllCorner = Instance.new("UICorner") KillAllCorner.CornerRadius = UDim.new(0,4) KillAllCorner.Parent = KillAllBtn
-
-local MoveModeBtn = Instance.new("TextButton")
-MoveModeBtn.Size = UDim2.new(1, -10, 0, 20)
-MoveModeBtn.Position = UDim2.new(0, 5, 0, 150)
-MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-MoveModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MoveModeBtn.Font = Enum.Font.GothamBold
-MoveModeBtn.TextSize = 10
-MoveModeBtn.Text = "Move Skills Mode: Locked"
-MoveModeBtn.TextScaled = true
-MoveModeBtn.Parent = Page2
-local MoveModeCorner = Instance.new("UICorner") MoveModeCorner.CornerRadius = UDim.new(0,4) MoveModeCorner.Parent = MoveModeBtn
-
-local ResetPosBtn = Instance.new("TextButton")
-ResetPosBtn.Size = UDim2.new(1, -10, 0, 20)
-ResetPosBtn.Position = UDim2.new(0, 5, 0, 172)
-ResetPosBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-ResetPosBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ResetPosBtn.Font = Enum.Font.GothamBold
-ResetPosBtn.TextSize = 10
-ResetPosBtn.Text = "Reset"
-ResetPosBtn.Visible = false
-ResetPosBtn.Parent = Page2
-local ResetPosCorner = Instance.new("UICorner") ResetPosCorner.CornerRadius = UDim.new(0,4) ResetPosCorner.Parent = ResetPosBtn
-
-local FlightToggleBtn = Instance.new("TextButton")
-FlightToggleBtn.Size = UDim2.new(1, -10, 0, 20)
-FlightToggleBtn.Position = UDim2.new(0, 5, 0, 196)
-FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 100, 100)
-FlightToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlightToggleBtn.Font = Enum.Font.GothamBold
-FlightToggleBtn.TextSize = 12
-FlightToggleBtn.Text = "Homelander Fly"
-FlightToggleBtn.TextScaled = true
-FlightToggleBtn.Parent = Page2
-local FlightToggleCorner = Instance.new("UICorner") FlightToggleCorner.CornerRadius = UDim.new(0,4) FlightToggleCorner.Parent = FlightToggleBtn
-
-local FlightLoadLabel = Instance.new("TextLabel")
-FlightLoadLabel.Size = UDim2.new(1, -10, 0, 16)
-FlightLoadLabel.Position = UDim2.new(0, 5, 0, 218)
-FlightLoadLabel.BackgroundTransparency = 1
-FlightLoadLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-FlightLoadLabel.Font = Enum.Font.Gotham
-FlightLoadLabel.TextSize = 10
-FlightLoadLabel.Text = "(Max load 20s)"
-FlightLoadLabel.TextXAlignment = Enum.TextXAlignment.Left
-FlightLoadLabel.Parent = Page2
-
-local SettingsFoldBtn = Instance.new("TextButton")
-SettingsFoldBtn.Size = UDim2.new(1, -10, 0, 24)
-SettingsFoldBtn.Position = UDim2.new(0, 5, 0, 236)
-SettingsFoldBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-SettingsFoldBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SettingsFoldBtn.Font = Enum.Font.GothamBold
-SettingsFoldBtn.TextSize = 12
-SettingsFoldBtn.Text = "Settings ▼"
-SettingsFoldBtn.Parent = Page2
-local SettingsFoldCorner = Instance.new("UICorner") SettingsFoldCorner.CornerRadius = UDim.new(0,4) SettingsFoldCorner.Parent = SettingsFoldBtn
-
-local SettingsContent = Instance.new("Frame")
-SettingsContent.Size = UDim2.new(1, -10, 0, 110)
-SettingsContent.Position = UDim2.new(0, 5, 0, 262)
-SettingsContent.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-SettingsContent.BorderSizePixel = 0
-SettingsContent.Visible = false
-SettingsContent.Parent = Page2
-local SettingsContentCorner = Instance.new("UICorner") SettingsContentCorner.CornerRadius = UDim.new(0,4) SettingsContentCorner.Parent = SettingsContent
-
-local SliderTitle = Instance.new("TextLabel")
-SliderTitle.Size = UDim2.new(1,-10,0,18) SliderTitle.Position = UDim2.new(0,5,0,5) SliderTitle.BackgroundTransparency = 1
-SliderTitle.TextColor3 = Color3.fromRGB(220,220,220) SliderTitle.Font = Enum.Font.GothamBold SliderTitle.TextSize = 11 SliderTitle.Text = "UI Scale" SliderTitle.TextXAlignment = Enum.TextXAlignment.Left SliderTitle.Parent = SettingsContent
-
-local SliderTrack = Instance.new("Frame")
-SliderTrack.Name = "SliderTrack" SliderTrack.Size = UDim2.new(1,-30,0,8) SliderTrack.Position = UDim2.new(0,15,0,30) SliderTrack.BackgroundColor3 = Color3.fromRGB(50,50,50) SliderTrack.BorderSizePixel = 0 SliderTrack.Parent = SettingsContent
-local SliderTrackCorner = Instance.new("UICorner") SliderTrackCorner.CornerRadius = UDim.new(0,4) SliderTrackCorner.Parent = SliderTrack
-
-local SliderFill = Instance.new("Frame")
-SliderFill.Name = "SliderFill" SliderFill.Size = UDim2.new(0.5,0,1,0) SliderFill.BackgroundColor3 = Color3.fromRGB(80,50,120) SliderFill.BorderSizePixel = 0 SliderFill.Parent = SliderTrack
-local SliderFillCorner = Instance.new("UICorner") SliderFillCorner.CornerRadius = UDim.new(0,4) SliderFillCorner.Parent = SliderFill
-
-local SliderThumb = Instance.new("TextButton")
-SliderThumb.Name = "SliderThumb" SliderThumb.Size = UDim2.new(0,16,0,16) SliderThumb.Position = UDim2.new(0.5,-8,0.5,-8) SliderThumb.BackgroundColor3 = Color3.fromRGB(255,255,255) SliderThumb.Text = "" SliderThumb.AutoButtonColor = false SliderThumb.Parent = SliderTrack
-local SliderThumbCorner = Instance.new("UICorner") SliderThumbCorner.CornerRadius = UDim.new(1,0) SliderThumbCorner.Parent = SliderThumb
-
-local PercentageLabel = Instance.new("TextLabel")
-PercentageLabel.Size = UDim2.new(0,50,0,18) PercentageLabel.Position = UDim2.new(1,-55,0,40) PercentageLabel.BackgroundTransparency = 1
-PercentageLabel.TextColor3 = Color3.fromRGB(255,255,255) PercentageLabel.Font = Enum.Font.GothamBold PercentageLabel.TextSize = 11 PercentageLabel.Text = "100%" PercentageLabel.TextXAlignment = Enum.TextXAlignment.Right PercentageLabel.Parent = SettingsContent
-
-local CancelScriptBtn = Instance.new("TextButton")
-CancelScriptBtn.Size = UDim2.new(1, -10, 0, 22)
-CancelScriptBtn.Position = UDim2.new(0, 5, 0, 70)
-CancelScriptBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-CancelScriptBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CancelScriptBtn.Font = Enum.Font.GothamBold
-CancelScriptBtn.TextSize = 11
-CancelScriptBtn.Text = "Cancel Script"
-CancelScriptBtn.Parent = SettingsContent
-local CancelScriptCorner = Instance.new("UICorner") CancelScriptCorner.CornerRadius = UDim.new(0,4) CancelScriptCorner.Parent = CancelScriptBtn
-
-local settingsOpen = false
-SettingsFoldBtn.MouseButton1Click:Connect(function()
-	settingsOpen = not settingsOpen
-	SettingsContent.Visible = settingsOpen
-	SettingsFoldBtn.Text = settingsOpen and "Settings ▲" or "Settings ▼"
+_0x00ce:_0x00d4(string.char(84, 101, 120, 116)):_0x0086(function()
+if (true or false) and _0x00b9 then
+local _0x00d3 = tonumber(_0x00ce._0x004c)
+if (true or false) and _0x00d3 and _0x00d3 > 0 then _0x00ba = _0x00d3 end
+end
 end)
-
--- ==================== Floating Buttons ====================
-local FloatingGui = Instance.new("ScreenGui")
-FloatingGui.Name = "DracoHubFloatingButtons"
-FloatingGui.ResetOnSpawn = false
-FloatingGui.IgnoreGuiInset = true
-FloatingGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local function applyButtonAutoScale(button)
-	button.TextScaled = true
-	button.TextWrapped = true
-	button.TextSize = 14
-end
-
-local LaserButton = Instance.new("TextButton")
-LaserButton.Size = UDim2.new(0, 60, 0, 30)
-LaserButton.Position = DEFAULT_POSITIONS.Laser
-LaserButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-LaserButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-LaserButton.Font = Enum.Font.GothamBold
-LaserButton.Text = "Laser"
-LaserButton.Visible = false
-applyButtonAutoScale(LaserButton)
-LaserButton.Parent = FloatingGui
-local LaserCorner = Instance.new("UICorner") LaserCorner.CornerRadius = UDim.new(0, 8) LaserCorner.Parent = LaserButton
-
-local UpthrowButton = Instance.new("TextButton")
-UpthrowButton.Size = UDim2.new(0, 60, 0, 60)
-UpthrowButton.Position = DEFAULT_POSITIONS.Upthrow
-UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-UpthrowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-UpthrowButton.Font = Enum.Font.GothamBold
-UpthrowButton.Text = "Upthrow"
-UpthrowButton.Visible = false
-applyButtonAutoScale(UpthrowButton)
-UpthrowButton.Parent = FloatingGui
-local UpthrowCorner = Instance.new("UICorner") UpthrowCorner.CornerRadius = UDim.new(0, 8) UpthrowCorner.Parent = UpthrowButton
-
-local OverthrowButton = Instance.new("TextButton")
-OverthrowButton.Size = UDim2.new(0, 60, 0, 60)
-OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
-OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
-OverthrowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OverthrowButton.Font = Enum.Font.GothamBold
-OverthrowButton.Text = "Overthrow"
-OverthrowButton.Visible = false
-applyButtonAutoScale(OverthrowButton)
-OverthrowButton.Parent = FloatingGui
-local OverthrowCorner = Instance.new("UICorner") OverthrowCorner.CornerRadius = UDim.new(0, 8) OverthrowCorner.Parent = OverthrowButton
-
-local FlashstrikeButton = Instance.new("TextButton")
-FlashstrikeButton.Size = UDim2.new(0, 60, 0, 60)
-FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
-FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
-FlashstrikeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlashstrikeButton.Font = Enum.Font.GothamBold
-FlashstrikeButton.Text = "Flashstrike"
-FlashstrikeButton.Visible = false
-applyButtonAutoScale(FlashstrikeButton)
-FlashstrikeButton.Parent = FloatingGui
-local FlashstrikeCorner = Instance.new("UICorner") FlashstrikeCorner.CornerRadius = UDim.new(0, 8) FlashstrikeCorner.Parent = FlashstrikeButton
-
-local KickButton = Instance.new("TextButton")
-KickButton.Size = UDim2.new(0, 60, 0, 60)
-KickButton.Position = DEFAULT_POSITIONS.Kick
-KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
-KickButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KickButton.Font = Enum.Font.GothamBold
-KickButton.Text = "One punch"
-KickButton.Visible = false
-applyButtonAutoScale(KickButton)
-KickButton.Parent = FloatingGui
-local KickCorner = Instance.new("UICorner") KickCorner.CornerRadius = UDim.new(0, 8) KickCorner.Parent = KickButton
-
-local ComboButton = Instance.new("TextButton")
-ComboButton.Size = UDim2.new(0, 60, 0, 60)
-ComboButton.Position = DEFAULT_POSITIONS.Combo
-ComboButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-ComboButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ComboButton.Font = Enum.Font.GothamBold
-ComboButton.Text = "Donut"
-ComboButton.Visible = false
-applyButtonAutoScale(ComboButton)
-ComboButton.Parent = FloatingGui
-local ComboCorner = Instance.new("UICorner") ComboCorner.CornerRadius = UDim.new(0, 8) ComboCorner.Parent = ComboButton
-
-local MoAimButton = Instance.new("TextButton")
-MoAimButton.Size = UDim2.new(0, 60, 0, 60)
-MoAimButton.Position = DEFAULT_POSITIONS.MoAim
-MoAimButton.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
-MoAimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MoAimButton.Font = Enum.Font.GothamBold
-MoAimButton.Text = "Ramkill"
-MoAimButton.TextScaled = true
-MoAimButton.TextWrapped = true
-MoAimButton.TextSize = 11
-MoAimButton.Visible = false
-MoAimButton.Parent = FloatingGui
-local MoAimCorner = Instance.new("UICorner") MoAimCorner.CornerRadius = UDim.new(0, 8) MoAimCorner.Parent = MoAimButton
-
-cancelButton = Instance.new("TextButton")
-cancelButton.Size = UDim2.new(0, 40, 0, 26)
-cancelButton.Position = UDim2.new(0, -46, 0.5, -13)
-cancelButton.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
-cancelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelButton.Font = Enum.Font.GothamBold
-cancelButton.Text = "Cancel"
-cancelButton.TextScaled = true
-cancelButton.Visible = false
-cancelButton.Parent = MoAimButton
-local cancelCorner = Instance.new("UICorner") cancelCorner.CornerRadius = UDim.new(0, 8) cancelCorner.Parent = cancelButton
-
--- ==================== Move Lock ====================
-local moveUnlocked = false
-
--- ==================== Remote Finders ====================
-local function findHomelanderMoveOneRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("homelander") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name == "MoveOne" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findHomelanderThrowDownRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("homelander") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name == "ThrowDown" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findVecnaOverheadThrowRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("vecna") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "overheadthrow" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findTheFlashCwFinalRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("theflashcw") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name == "Final" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findZodiacKickRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("zodiac") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "kick" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findSteveHShieldCounterRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder.Name:lower() == "steve_h" then
-			local remotesFolder = folder:FindFirstChild("Remotes")
-			if remotesFolder then
-				for _, remote in ipairs(remotesFolder:GetChildren()) do
-					if remote:IsA("RemoteEvent") and remote.Name == "ShieldCounter" then
-						return remote
-					end
-				end
-			end
-			break
-		end
-	end
-	return nil
-end
-
-local function findSpiderManWebBlossomRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("spiderman") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower():find("webbloss") then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findTheBatmanMoveOneRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("thebatman") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "moveone" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findTheFlashCwVibrateArmRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("theflashcw") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "vibratearm" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findTheFlashCwFastestManRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("theflashcw") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "fastestman" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findAmazoFinisherRemote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("amazo") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "finisher" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local function findGhostfaceStab2Remote()
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then return nil end
-	for _, folder in ipairs(charactersFolder:GetChildren()) do
-		if folder:IsA("Folder") or folder:IsA("Model") then
-			if folder.Name:lower():find("ghostface") then
-				local remotesFolder = folder:FindFirstChild("Remotes")
-				if remotesFolder then
-					for _, remote in ipairs(remotesFolder:GetChildren()) do
-						if remote:IsA("RemoteEvent") and remote.Name:lower() == "stab2" then
-							return remote
-						end
-					end
-				end
-			end
-		end
-	end
-	return nil
-end
-
--- ==================== Aim System ====================
-local function getPlayerFromScreenCenter()
-	local camera = workspace.CurrentCamera
-	if not camera then return nil end
-
-	local viewportSize = camera.ViewportSize
-	local screenCenterX = viewportSize.X / 2
-	local detectionWidth = viewportSize.X / 4
-
-	local closestPlayer = nil
-	local closestDepth = math.huge
-
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer then
-			local targetCharacter = player.Character
-			if targetCharacter then
-				local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
-				if targetRoot then
-					local screenPos, onScreen = camera:WorldToScreenPoint(targetRoot.Position)
-					if onScreen then
-						local screenX = screenPos.X
-						if math.abs(screenX - screenCenterX) <= detectionWidth / 2 then
-							if screenPos.Z < closestDepth then
-								closestDepth = screenPos.Z
-								closestPlayer = player
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-	return closestPlayer
-end
-
-local function enterAimMode()
-	if aimModeActive then return end
-	aimModeActive = true
-	MoAimButton.Text = "Go"
-	MoAimButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-	cancelButton.Visible = true
-
-	local targetPlayer = getPlayerFromScreenCenter()
-	if targetPlayer then
-		aimTarget = targetPlayer
-		aimActive = true
-		local targetChar = targetPlayer.Character
-		if targetChar then
-			local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-			if targetRoot then
-				aimLine = Instance.new("Part")
-				aimLine.Size = Vector3.new(0.3, 10, 0.3)
-				aimLine.Color = Color3.fromRGB(255, 0, 0)
-				aimLine.Material = Enum.Material.Neon
-				aimLine.Anchored = true
-				aimLine.CanCollide = false
-				aimLine.Parent = workspace
-				aimLine.Position = targetRoot.Position + Vector3.new(0, 3, 0)
-
-				aimHighlight = Instance.new("Highlight")
-				aimHighlight.FillColor = Color3.fromRGB(255, 0, 0)
-				aimHighlight.FillTransparency = 0.7
-				aimHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-				aimHighlight.OutlineTransparency = 0
-				aimHighlight.Parent = targetChar
-			end
-		end
-	end
-
-	if aimUpdateConnection then aimUpdateConnection:Disconnect() end
-	aimUpdateConnection = RunService.Heartbeat:Connect(function()
-		if not aimModeActive then return end
-		local newTarget = getPlayerFromScreenCenter()
-		if newTarget and newTarget ~= aimTarget then
-			aimTarget = newTarget
-			if aimHighlight then aimHighlight:Destroy() end
-			if aimLine then aimLine:Destroy() end
-			local newChar = newTarget.Character
-			if newChar then
-				local newRoot = newChar:FindFirstChild("HumanoidRootPart")
-				if newRoot then
-					aimLine = Instance.new("Part")
-					aimLine.Size = Vector3.new(0.3, 10, 0.3)
-					aimLine.Color = Color3.fromRGB(255, 0, 0)
-					aimLine.Material = Enum.Material.Neon
-					aimLine.Anchored = true
-					aimLine.CanCollide = false
-					aimLine.Parent = workspace
-					aimLine.Position = newRoot.Position + Vector3.new(0, 3, 0)
-
-					aimHighlight = Instance.new("Highlight")
-					aimHighlight.FillColor = Color3.fromRGB(255, 0, 0)
-					aimHighlight.FillTransparency = 0.7
-					aimHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-					aimHighlight.OutlineTransparency = 0
-					aimHighlight.Parent = newChar
-				end
-			end
-		end
-		if aimLine and aimTarget then
-			local targetChar = aimTarget.Character
-			if targetChar then
-				local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-				if targetRoot then
-					aimLine.Position = targetRoot.Position + Vector3.new(0, 3, 0)
-				end
-			end
-		end
-	end)
-end
-
-local function exitAimMode()
-	if not aimModeActive then return end
-	aimModeActive = false
-	MoAimButton.Text = "Ramkill"
-	MoAimButton.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
-	cancelButton.Visible = false
-
-	if aimUpdateConnection then
-		aimUpdateConnection:Disconnect()
-		aimUpdateConnection = nil
-	end
-	if aimLine then aimLine:Destroy() aimLine = nil end
-	if aimHighlight then aimHighlight:Destroy() aimHighlight = nil end
-	aimTarget = nil
-	aimActive = false
-end
-
--- ★ 採用 bbb 版本的執行邏輯 + WebBlossom 特效 ★
-local function executeAimAction()
-	if isExecuting then return end
-	if not aimTarget then return end
-
-	local targetChar = aimTarget.Character
-	if not targetChar then return end
-	local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-	if not targetRoot then return end
-
-	local playerChar = LocalPlayer.Character
-	if not playerChar then return end
-	local humanoid = playerChar:FindFirstChildOfClass("Humanoid")
-	if not humanoid then return end
-	local rootPart = playerChar:FindFirstChild("HumanoidRootPart")
-	if not rootPart then return end
-
-	-- Fire FastestMan once
-	local fastestManRemote = findTheFlashCwFastestManRemote()
-	if fastestManRemote then
-		fastestManRemote:FireServer()
-	end
-
-	-- Get Ghostface Stab2 remote
-	local stab2Remote = findGhostfaceStab2Remote()
-
-	-- ★ WebBlossom 特效（保留）
-	local webBlossomRemote = findSpiderManWebBlossomRemote()
-
-	isExecuting = true
-	executionCanceled = false
-	cancelButton.Visible = true
-
-	local originalWalkSpeed = humanoid.WalkSpeed
-	local originalJumpPower = humanoid.JumpPower
-
-	local speed = 200
-	humanoid.WalkSpeed = speed
-	humanoid.JumpPower = 0
-
-	local stab2Triggered = false
-
-	-- ★ 三點閃爍（bbb 風格）
-	if executionFlashThread then task.cancel(executionFlashThread) end
-	executionFlashThread = task.spawn(function()
-		local chars = {"● ● ●", "● ● ○", "● ○ ●", "○ ● ●"}
-		local index = 1
-		while isExecuting do
-			MoAimButton.Text = chars[index]
-			index = index % #chars + 1
-			task.wait(0.25)
-		end
-		MoAimButton.Text = "Go"
-	end)
-
-	-- ★ WebBlossom 定時觸發（特效保留）
-	if webBlossomRemote then
-		if webBlossomThread then task.cancel(webBlossomThread) end
-		webBlossomThread = task.spawn(function()
-			while isExecuting do
-				webBlossomRemote:FireServer()
-				task.wait(0.1)
-			end
-		end)
-	end
-
-	-- ★ 移動邏輯（bbb 風格：到達即停，沒有自由移動）
-	if executionConnection then executionConnection:Disconnect() end
-	executionConnection = RunService.Heartbeat:Connect(function()
-		if executionCanceled or not isExecuting then
-			if rootPart then
-				rootPart.Velocity = Vector3.zero
-			end
-			return
-		end
-
-		if not targetRoot or not targetRoot.Parent then
-			executionCanceled = true
-			return
-		end
-
-		-- Move towards target
-		local direction = (targetRoot.Position - rootPart.Position).Unit
-		rootPart.Velocity = direction * speed
-
-		-- Stab2 detection (once, within 4 studs)
-		if stab2Remote and not stab2Triggered then
-			local myPos = rootPart.Position
-			for _, player in ipairs(Players:GetPlayers()) do
-				if player ~= LocalPlayer then
-					local char = player.Character
-					if char then
-						local hrp = char:FindFirstChild("HumanoidRootPart")
-						if hrp then
-							local dist = (myPos - hrp.Position).Magnitude
-							if dist <= 4 then
-								stab2Remote:FireServer()
-								task.wait(0.05)
-								stab2Remote:FireServer()
-								stab2Triggered = true
-								break
-							end
-						end
-					end
-				end
-			end
-		end
-
-		-- ★ 到達目標（距離 < 1）立即停止
-		local distance = (rootPart.Position - targetRoot.Position).Magnitude
-		if distance < 1 then
-			executionCanceled = true
-		end
-	end)
-
-	while isExecuting and not executionCanceled do
-		task.wait(0.05)
-	end
-
-	-- 清理所有資源
-	if executionConnection then
-		executionConnection:Disconnect()
-		executionConnection = nil
-	end
-
-	if webBlossomThread then
-		task.cancel(webBlossomThread)
-		webBlossomThread = nil
-	end
-
-	-- ★ 還原速度（bbb 風格：直接恢復原速）
-	if humanoid then
-		humanoid.WalkSpeed = originalWalkSpeed
-		humanoid.JumpPower = originalJumpPower
-		humanoid:MoveTo(rootPart.Position)
-	end
-
-	if executionFlashThread then
-		task.cancel(executionFlashThread)
-		executionFlashThread = nil
-	end
-	MoAimButton.Text = "Go"
-
-	isExecuting = false
-	exitAimMode()
-end
-
-MoAimButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-
-	if aimModeActive then
-		task.spawn(executeAimAction)
-	else
-		enterAimMode()
-	end
+_0x00d2()
+local _0x00d5 = _0x003f._0x0040(string.char(83, 99, 114, 111, 108, 108, 105, 110, 103, 70, 114, 97, 109, 101))
+_0x00d5._0x0043 = _0x0044._0x0040(1,-(16 / 4),1,-97)
+_0x00d5._0x006c = _0x0044._0x0040(0,2,0,(47 + 48))
+_0x00d5._0x00d6 = _0x0044._0x0040(0,0,0,0)
+_0x00d5._0x00d7 = 4
+_0x00d5._0x004b = 1
+_0x00d5._0x0049 = _0x009b
+local _0x00d8 = _0x003f._0x0040(string.char(85, 73, 76, 105, 115, 116, 76, 97, 121, 111, 117, 116)) _0x00d8._0x00d9 = _0x0051._0x00d9._0x00da _0x00d8._0x00db = _0x0071._0x0040(0,3) _0x00d8._0x0049 = _0x00d5
+local _0x00dd = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00dd._0x0043 = _0x0044._0x0040(1, -(40 / 4), 0, 24)
+_0x00dd._0x006c = _0x0044._0x0040(0, (20 / 4), 0, 10)
+_0x00dd._0x006d = _0x004e._0x004f(50, (15 + 15), 70)
+_0x00dd._0x004d = _0x004e._0x004f(255, 255, (275 - 20))
+_0x00dd._0x0050 = _0x0051._0x0050._0x0052
+_0x00dd._0x0053 = (6 + 6)
+_0x00dd._0x004c = string.char(72, 111, 109, 101, 108, 97, 110, 100, 101, 114, 115, 32, 77, 111, 100)
+_0x00dd._0x0054 = true
+_0x00dd._0x0049 = _0x009c
+local _0x00de = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00de._0x0070 = _0x0071._0x0040(0,4) _0x00de._0x0049 = _0x00dd
+local _0x00df = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00df._0x0043 = _0x0044._0x0040(0.5, -8, 0, 24)
+_0x00df._0x006c = _0x0044._0x0040(0.5, 2, 0, (5 + 5))
+_0x00df._0x006d = _0x004e._0x004f(30, (400 / 4), (120 / 2))
+_0x00df._0x004d = _0x004e._0x004f((127 + 128), (351 - 96), (510 / 2))
+_0x00df._0x0050 = _0x0051._0x0050._0x0052
+_0x00df._0x0053 = 10
+_0x00df._0x004c = string.char(65, 117, 116, 111, 32, 70, 105, 110, 105, 115, 104, 101, 114, 32, 79, 70, 70)
+_0x00df._0x0054 = true
+_0x00df._0x0083 = false
+_0x00df._0x0049 = _0x009c
+local _0x00e0 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00e0._0x0070 = _0x0071._0x0040(0,(98 - 94)) _0x00e0._0x0049 = _0x00df
+local _0x00e1 = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00e1._0x0043 = _0x0044._0x0040(1, -(63 - 53), 0, (62 - 48))
+_0x00e1._0x006c = _0x0044._0x0040(0, 5, 0, 36)
+_0x00e1._0x004b = 1
+_0x00e1._0x004d = _0x004e._0x004f((271 - 16), 255, (765 / 3))
+_0x00e1._0x0050 = _0x0051._0x0050._0x00a1
+_0x00e1._0x0053 = (3 + 3)
+_0x00e1._0x004c = string.char(40, 76, 97, 115, 101, 114, 58, 32, 72, 111, 109, 101, 108, 97, 110, 100, 101, 114, 32, 38, 32, 83, 117, 112, 101, 114, 109, 97, 110, 41)
+_0x00e1._0x0077 = _0x0051._0x0077._0x00c0
+_0x00e1._0x0049 = _0x009c
+local _0x00e2 = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00e2._0x0043 = _0x0044._0x0040(1, -(20 / 2), 0, 14)
+_0x00e2._0x006c = _0x0044._0x0040(0, (51 - 46), 0, 50)
+_0x00e2._0x004b = 1
+_0x00e2._0x004c = string.char(84, 69, 83, 84)
+_0x00e2._0x004d = _0x004e._0x004f(255, (259 - 24), (75 + 75))
+_0x00e2._0x0050 = _0x0051._0x0050._0x0052
+_0x00e2._0x0053 = (6 + 6)
+_0x00e2._0x0054 = true
+_0x00e2._0x0077 = _0x0051._0x0077._0x0078
+_0x00e2._0x0049 = _0x009c
+local _0x00e3 = _0x003f._0x0040(string.char(73, 109, 97, 103, 101, 76, 97, 98, 101, 108))
+_0x00e3._0x0043 = _0x0044._0x0040(0, 24, 0, (46 - 22))
+_0x00e3._0x006c = _0x0044._0x0040(0, (2 + 3), 0, (32 + 32))
+_0x00e3._0x004b = 1
+_0x00e3._0x007f = string.char(114, 98, 120, 97, 115, 115, 101, 116, 105, 100, 58, 47, 47, 40, 51, 56, 57, 49, 55, 51, 49, 55, 49, 49, 53, 54, 50, 51, 57, 32, 47, 32, 51, 41)
+_0x00e3._0x0080 = _0x0051._0x0080._0x0081
+_0x00e3._0x0049 = _0x009c
+local _0x00e4 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00e4._0x0043 = _0x0044._0x0040(1, -(160 / 4), 0, 24)
+_0x00e4._0x006c = _0x0044._0x0040(0, 30, 0, (32 + 32))
+_0x00e4._0x006d = _0x004e._0x004f(50, (90 / 3), (280 / 4))
+_0x00e4._0x004d = _0x004e._0x004f(255, 255, 255)
+_0x00e4._0x0050 = _0x0051._0x0050._0x0052
+_0x00e4._0x0053 = 12
+_0x00e4._0x004c = string.char(65, 45, 84, 114, 97, 105, 110, 32, 77, 111, 100, 101)
+_0x00e4._0x0054 = true
+_0x00e4._0x0077 = _0x0051._0x0077._0x00c0
+_0x00e4._0x0049 = _0x009c
+local _0x00e5 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00e5._0x0070 = _0x0071._0x0040(0,(86 - 82)) _0x00e5._0x0049 = _0x00e4
+local _0x00e6 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00e6._0x0043 = _0x0044._0x0040(1, -10, 0, (80 - 56))
+_0x00e6._0x006c = _0x0044._0x0040(0, 5, 0, (354 / 3))
+_0x00e6._0x006d = _0x004e._0x004f(120, (80 / 4), (37 - 17))
+_0x00e6._0x004d = _0x004e._0x004f(255, (127 + 128), (1020 / 4))
+_0x00e6._0x0050 = _0x0051._0x0050._0x0052
+_0x00e6._0x0053 = 12
+_0x00e6._0x004c = string.char(55357, 56448, 32, 75, 105, 108, 108, 32, 65, 108, 108)
+_0x00e6._0x0054 = true
+_0x00e6._0x0049 = _0x009c
+local _0x00e7 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00e7._0x0070 = _0x0071._0x0040(0,(2 + 2)) _0x00e7._0x0049 = _0x00e6
+local _0x00e8 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00e8._0x0043 = _0x0044._0x0040(1, -10, 0, (10 + 10))
+_0x00e8._0x006c = _0x0044._0x0040(0, 5, 0, (168 - 18))
+_0x00e8._0x006d = _0x004e._0x004f(60, (80 - 20), 60)
+_0x00e8._0x004d = _0x004e._0x004f(255, 255, (274 - 19))
+_0x00e8._0x0050 = _0x0051._0x0050._0x0052
+_0x00e8._0x0053 = (35 - 25)
+_0x00e8._0x004c = string.char(77, 111, 118, 101, 32, 83, 107, 105, 108, 108, 115, 32, 77, 111, 100, 101, 58, 32, 76, 111, 99, 107, 101, 100)
+_0x00e8._0x0054 = true
+_0x00e8._0x0049 = _0x009c
+local _0x00e9 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00e9._0x0070 = _0x0071._0x0040(0,4) _0x00e9._0x0049 = _0x00e8
+local _0x00ea = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00ea._0x0043 = _0x0044._0x0040(1, -10, 0, (30 - 10))
+_0x00ea._0x006c = _0x0044._0x0040(0, (2 + 3), 0, (344 / 2))
+_0x00ea._0x006d = _0x004e._0x004f(200, 50, (89 - 39))
+_0x00ea._0x004d = _0x004e._0x004f((765 / 3), (127 + 128), (337 - 82))
+_0x00ea._0x0050 = _0x0051._0x0050._0x0052
+_0x00ea._0x0053 = 10
+_0x00ea._0x004c = string.char(82, 101, 115, 101, 116)
+_0x00ea._0x0083 = false
+_0x00ea._0x0049 = _0x009c
+local _0x00eb = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00eb._0x0070 = _0x0071._0x0040(0,4) _0x00eb._0x0049 = _0x00ea
+local _0x00ec = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00ec._0x0043 = _0x0044._0x0040(1, -(5 + 5), 0, (67 - 47))
+_0x00ec._0x006c = _0x0044._0x0040(0, (2 + 3), 0, (784 / 4))
+_0x00ec._0x006d = _0x004e._0x004f((80 / 4), (300 / 3), 100)
+_0x00ec._0x004d = _0x004e._0x004f(255, (1020 / 4), (1020 / 4))
+_0x00ec._0x0050 = _0x0051._0x0050._0x0052
+_0x00ec._0x0053 = (6 + 6)
+_0x00ec._0x004c = string.char(72, 111, 109, 101, 108, 97, 110, 100, 101, 114, 32, 70, 108, 121)
+_0x00ec._0x0054 = true
+_0x00ec._0x0049 = _0x009c
+local _0x00ed = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00ed._0x0070 = _0x0071._0x0040(0,4) _0x00ed._0x0049 = _0x00ec
+local _0x00ee = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00ee._0x0043 = _0x0044._0x0040(1, -10, 0, 16)
+_0x00ee._0x006c = _0x0044._0x0040(0, (20 / 4), 0, (271 - 53))
+_0x00ee._0x004b = 1
+_0x00ee._0x004d = _0x004e._0x004f(180, 180, 180)
+_0x00ee._0x0050 = _0x0051._0x0050._0x00a1
+_0x00ee._0x0053 = (40 / 4)
+_0x00ee._0x004c = string.char(40, 77, 97, 120, 32, 108, 111, 97, 100, 32, 50, 48, 115, 41)
+_0x00ee._0x0077 = _0x0051._0x0077._0x00c0
+_0x00ee._0x0049 = _0x009c
+local _0x00ef = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00ef._0x0043 = _0x0044._0x0040(1, -10, 0, 24)
+_0x00ef._0x006c = _0x0044._0x0040(0, (10 / 2), 0, 236)
+_0x00ef._0x006d = _0x004e._0x004f((130 - 85), (134 - 89), 45)
+_0x00ef._0x004d = _0x004e._0x004f((510 / 2), 255, 255)
+_0x00ef._0x0050 = _0x0051._0x0050._0x0052
+_0x00ef._0x0053 = 12
+_0x00ef._0x004c = string.char(83, 101, 116, 116, 105, 110, 103, 115, 32, 9660)
+_0x00ef._0x0049 = _0x009c
+local _0x00f0 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00f0._0x0070 = _0x0071._0x0040(0,4) _0x00f0._0x0049 = _0x00ef
+local _0x00f1 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x00f1._0x0043 = _0x0044._0x0040(1, -(25 - 15), 0, (55 + 55))
+_0x00f1._0x006c = _0x0044._0x0040(0, 5, 0, (1048 / 4))
+_0x00f1._0x006d = _0x004e._0x004f(20, (60 / 3), 20)
+_0x00f1._0x006e = 0
+_0x00f1._0x0083 = false
+_0x00f1._0x0049 = _0x009c
+local _0x00f2 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00f2._0x0070 = _0x0071._0x0040(0,(48 - 44)) _0x00f2._0x0049 = _0x00f1
+local _0x00f3 = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00f3._0x0043 = _0x0044._0x0040(1,-(106 - 96),0,(9 + 9)) _0x00f3._0x006c = _0x0044._0x0040(0,5,0,5) _0x00f3._0x004b = 1
+_0x00f3._0x004d = _0x004e._0x004f((880 / 4),(110 + 110),220) _0x00f3._0x0050 = _0x0051._0x0050._0x0052 _0x00f3._0x0053 = 11 _0x00f3._0x004c = string.char(85, 73, 32, 83, 99, 97, 108, 101) _0x00f3._0x0077 = _0x0051._0x0077._0x00c0 _0x00f3._0x0049 = _0x00f1
+local _0x00f4 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x00f4._0x0041 = string.char(83, 108, 105, 100, 101, 114, 84, 114, 97, 99, 107) _0x00f4._0x0043 = _0x0044._0x0040(1,-(90 / 3),0,8) _0x00f4._0x006c = _0x0044._0x0040(0,(7 + 8),0,(111 - 81)) _0x00f4._0x006d = _0x004e._0x004f(50,(150 / 3),(150 / 3)) _0x00f4._0x006e = 0 _0x00f4._0x0049 = _0x00f1
+local _0x00f5 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00f5._0x0070 = _0x0071._0x0040(0,(2 + 2)) _0x00f5._0x0049 = _0x00f4
+local _0x00f6 = _0x003f._0x0040(string.char(70, 114, 97, 109, 101))
+_0x00f6._0x0041 = string.char(83, 108, 105, 100, 101, 114, 70, 105, 108, 108) _0x00f6._0x0043 = _0x0044._0x0040(0.5,0,1,0) _0x00f6._0x006d = _0x004e._0x004f(80,50,120) _0x00f6._0x006e = 0 _0x00f6._0x0049 = _0x00f4
+local _0x00f7 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00f7._0x0070 = _0x0071._0x0040(0,4) _0x00f7._0x0049 = _0x00f6
+local _0x00f8 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00f8._0x0041 = string.char(83, 108, 105, 100, 101, 114, 84, 104, 117, 109, 98) _0x00f8._0x0043 = _0x0044._0x0040(0,(32 / 2),0,16) _0x00f8._0x006c = _0x0044._0x0040(0.5,-(44 - 36),0.5,-(37 - 29)) _0x00f8._0x006d = _0x004e._0x004f((267 - 12),255,(1020 / 4)) _0x00f8._0x004c = "" _0x00f8._0x0082 = false _0x00f8._0x0049 = _0x00f4
+local _0x00f9 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00f9._0x0070 = _0x0071._0x0040(1,0) _0x00f9._0x0049 = _0x00f8
+local _0x00fa = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+_0x00fa._0x0043 = _0x0044._0x0040(0,50,0,18) _0x00fa._0x006c = _0x0044._0x0040(1,-(165 / 3),0,40) _0x00fa._0x004b = 1
+_0x00fa._0x004d = _0x004e._0x004f((289 - 34),(127 + 128),(127 + 128)) _0x00fa._0x0050 = _0x0051._0x0050._0x0052 _0x00fa._0x0053 = 11 _0x00fa._0x004c = string.char(49, 48, 48, 37) _0x00fa._0x0077 = _0x0051._0x0077._0x00fb _0x00fa._0x0049 = _0x00f1
+local _0x00fc = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x00fc._0x0043 = _0x0044._0x0040(1, -10, 0, (70 - 48))
+_0x00fc._0x006c = _0x0044._0x0040(0, 5, 0, 70)
+_0x00fc._0x006d = _0x004e._0x004f(180, 40, (103 - 63))
+_0x00fc._0x004d = _0x004e._0x004f((339 - 84), (287 - 32), (127 + 128))
+_0x00fc._0x0050 = _0x0051._0x0050._0x0052
+_0x00fc._0x0053 = (44 / 4)
+_0x00fc._0x004c = string.char(67, 97, 110, 99, 101, 108, 32, 83, 99, 114, 105, 112, 116)
+_0x00fc._0x0049 = _0x00f1
+local _0x00fd = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x00fd._0x0070 = _0x0071._0x0040(0,(12 / 3)) _0x00fd._0x0049 = _0x00fc
+local _0x00fe = false
+_0x00ef._0x0085:_0x0086(function()
+_0x00fe = not _0x00fe
+_0x00f1._0x0083 = _0x00fe
+_0x00ef._0x004c = _0x00fe and string.char(83, 101, 116, 116, 105, 110, 103, 115, 32, 9650) or string.char(83, 101, 116, 116, 105, 110, 103, 115, 32, 9660)
 end)
-
-cancelButton.MouseButton1Click:Connect(function()
-	if isExecuting then
-		executionCanceled = true
-		task.wait(0.2)
-	end
-	exitAimMode()
+local _0x0101 = _0x003f._0x0040(string.char(83, 99, 114, 101, 101, 110, 71, 117, 105))
+_0x0101._0x0041 = string.char(68, 114, 97, 99, 111, 72, 117, 98, 70, 108, 111, 97, 116, 105, 110, 103, 66, 117, 116, 116, 111, 110, 115)
+_0x0101._0x0069 = false
+_0x0101._0x006a = true
+_0x0101._0x0049 = _0x0006:_0x000c(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105))
+local function _0x0102(_0x0103)
+_0x0103._0x0054 = true
+_0x0103._0x0055 = true
+_0x0103._0x0053 = (7 + 7)
+end
+local _0x0104 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0104._0x0043 = _0x0044._0x0040(0, (30 + 30), 0, (60 / 2))
+_0x0104._0x006c = _0x0060._0x0061
+_0x0104._0x006d = _0x004e._0x004f(120, 30, (120 / 4))
+_0x0104._0x004d = _0x004e._0x004f(255, 255, (127 + 128))
+_0x0104._0x0050 = _0x0051._0x0050._0x0052
+_0x0104._0x004c = string.char(76, 97, 115, 101, 114)
+_0x0104._0x0083 = false
+_0x0102(_0x0104)
+_0x0104._0x0049 = _0x0101
+local _0x0105 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0105._0x0070 = _0x0071._0x0040(0, (24 / 3)) _0x0105._0x0049 = _0x0104
+local _0x0106 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0106._0x0043 = _0x0044._0x0040(0, 60, 0, (82 - 22))
+_0x0106._0x006c = _0x0060._0x0062
+_0x0106._0x006d = _0x004e._0x004f((101 - 71), (240 / 3), 30)
+_0x0106._0x004d = _0x004e._0x004f(255, (765 / 3), 255)
+_0x0106._0x0050 = _0x0051._0x0050._0x0052
+_0x0106._0x004c = string.char(85, 112, 116, 104, 114, 111, 119)
+_0x0106._0x0083 = false
+_0x0102(_0x0106)
+_0x0106._0x0049 = _0x0101
+local _0x0107 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0107._0x0070 = _0x0071._0x0040(0, 8) _0x0107._0x0049 = _0x0106
+local _0x0108 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0108._0x0043 = _0x0044._0x0040(0, (90 - 30), 0, 60)
+_0x0108._0x006c = _0x0060._0x0063
+_0x0108._0x006d = _0x004e._0x004f((111 - 31), 50, 30)
+_0x0108._0x004d = _0x004e._0x004f((302 - 47), (310 - 55), (127 + 128))
+_0x0108._0x0050 = _0x0051._0x0050._0x0052
+_0x0108._0x004c = string.char(79, 118, 101, 114, 116, 104, 114, 111, 119)
+_0x0108._0x0083 = false
+_0x0102(_0x0108)
+_0x0108._0x0049 = _0x0101
+local _0x0109 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0109._0x0070 = _0x0071._0x0040(0, (4 + 4)) _0x0109._0x0049 = _0x0108
+local _0x010a = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x010a._0x0043 = _0x0044._0x0040(0, (30 + 30), 0, 60)
+_0x010a._0x006c = _0x0060._0x0064
+_0x010a._0x006d = _0x004e._0x004f((120 / 4), 60, 180)
+_0x010a._0x004d = _0x004e._0x004f((127 + 128), 255, 255)
+_0x010a._0x0050 = _0x0051._0x0050._0x0052
+_0x010a._0x004c = string.char(70, 108, 97, 115, 104, 115, 116, 114, 105, 107, 101)
+_0x010a._0x0083 = false
+_0x0102(_0x010a)
+_0x010a._0x0049 = _0x0101
+local _0x010b = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x010b._0x0070 = _0x0071._0x0040(0, (4 + 4)) _0x010b._0x0049 = _0x010a
+local _0x010c = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x010c._0x0043 = _0x0044._0x0040(0, (30 + 30), 0, 60)
+_0x010c._0x006c = _0x0060._0x0065
+_0x010c._0x006d = _0x004e._0x004f(150, (120 / 4), 150)
+_0x010c._0x004d = _0x004e._0x004f(255, (510 / 2), (127 + 128))
+_0x010c._0x0050 = _0x0051._0x0050._0x0052
+_0x010c._0x004c = string.char(79, 110, 101, 32, 112, 117, 110, 99, 104)
+_0x010c._0x0083 = false
+_0x0102(_0x010c)
+_0x010c._0x0049 = _0x0101
+local _0x010d = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x010d._0x0070 = _0x0071._0x0040(0, 8) _0x010d._0x0049 = _0x010c
+local _0x010e = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x010e._0x0043 = _0x0044._0x0040(0, (82 - 22), 0, 60)
+_0x010e._0x006c = _0x0060._0x0066
+_0x010e._0x006d = _0x004e._0x004f((240 / 3), (240 / 3), (320 / 4))
+_0x010e._0x004d = _0x004e._0x004f((266 - 11), 255, 255)
+_0x010e._0x0050 = _0x0051._0x0050._0x0052
+_0x010e._0x004c = string.char(68, 111, 110, 117, 116)
+_0x010e._0x0083 = false
+_0x0102(_0x010e)
+_0x010e._0x0049 = _0x0101
+local _0x010f = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x010f._0x0070 = _0x0071._0x0040(0, (79 - 71)) _0x010f._0x0049 = _0x010e
+local _0x0110 = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x0110._0x0043 = _0x0044._0x0040(0, 60, 0, (240 / 4))
+_0x0110._0x006c = _0x0060._0x0067
+_0x0110._0x006d = _0x004e._0x004f(100, (90 / 3), (75 - 45))
+_0x0110._0x004d = _0x004e._0x004f((127 + 128), (127 + 128), (268 - 13))
+_0x0110._0x0050 = _0x0051._0x0050._0x0052
+_0x0110._0x004c = string.char(82, 97, 109, 107, 105, 108, 108)
+_0x0110._0x0054 = true
+_0x0110._0x0055 = true
+_0x0110._0x0053 = 11
+_0x0110._0x0083 = false
+_0x0110._0x0049 = _0x0101
+local _0x0111 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0111._0x0070 = _0x0071._0x0040(0, 8) _0x0111._0x0049 = _0x0110
+_0x002f = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+_0x002f._0x0043 = _0x0044._0x0040(0, 40, 0, (13 + 13))
+_0x002f._0x006c = _0x0044._0x0040(0, -46, 0.5, -(76 - 63))
+_0x002f._0x006d = _0x004e._0x004f((228 - 28), 30, (90 / 3))
+_0x002f._0x004d = _0x004e._0x004f(255, 255, (1020 / 4))
+_0x002f._0x0050 = _0x0051._0x0050._0x0052
+_0x002f._0x004c = string.char(67, 97, 110, 99, 101, 108)
+_0x002f._0x0054 = true
+_0x002f._0x0083 = false
+_0x002f._0x0049 = _0x0110
+local _0x0112 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x0112._0x0070 = _0x0071._0x0040(0, (24 / 3)) _0x0112._0x0049 = _0x002f
+local _0x0115 = false
+local function _0x0118()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if (true or false) and _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if (true or false) and _0x00b0._0x0041:lower():find(string.char(104, 111, 109, 101, 108, 97, 110, 100, 101, 114)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (true or false) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041 == string.char(77, 111, 118, 101, 79, 110, 101) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x0119()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (5 == 5) and not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if (2 * 3 > 5) and _0x00b0._0x0041:lower():find(string.char(104, 111, 109, 101, 108, 97, 110, 100, 101, 114)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if (true or false) and _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041 == string.char(84, 104, 114, 111, 119, 68, 111, 119, 110) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x011a()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if _0x00b0._0x0041:lower():find(string.char(118, 101, 99, 110, 97)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if (2 * 3 > 5) and _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (true or false) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(111, 118, 101, 114, 104, 101, 97, 100, 116, 104, 114, 111, 119) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x011b()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if (1 + 1 == 2) and _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if (true or false) and _0x00b0._0x0041:lower():find(string.char(116, 104, 101, 102, 108, 97, 115, 104, 99, 119)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if (true or false) and _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041 == string.char(70, 105, 110, 97, 108) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x011c()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if (true or false) and _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if _0x00b0._0x0041:lower():find(string.char(122, 111, 100, 105, 97, 99)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(107, 105, 99, 107) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x011d()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b0._0x0041:lower() == string.char(115, 116, 101, 118, 101, 95, 104) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041 == string.char(83, 104, 105, 101, 108, 100, 67, 111, 117, 110, 116, 101, 114) then
+return _0x00b3
+end
+end
+end
+break
+end
+end
+return nil
+end
+local function _0x011e()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if (5 == 5) and _0x00b0._0x0041:lower():find(string.char(115, 112, 105, 100, 101, 114, 109, 97, 110)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower():find(string.char(119, 101, 98, 98, 108, 111, 115, 115)) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x011f()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (true or false) and not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if _0x00b0._0x0041:lower():find(string.char(116, 104, 101, 98, 97, 116, 109, 97, 110)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if (2 * 3 > 5) and _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (5 == 5) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(109, 111, 118, 101, 111, 110, 101) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x0120()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if (1 + 1 == 2) and _0x00b0._0x0041:lower():find(string.char(116, 104, 101, 102, 108, 97, 115, 104, 99, 119)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if (1 + 1 == 2) and _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(118, 105, 98, 114, 97, 116, 101, 97, 114, 109) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x0121()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (true or false) and not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if _0x00b0._0x0041:lower():find(string.char(116, 104, 101, 102, 108, 97, 115, 104, 99, 119)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if (2 * 3 > 5) and _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(102, 97, 115, 116, 101, 115, 116, 109, 97, 110) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x0122()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (1 + 1 == 2) and not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if _0x00b0._0x0041:lower():find(string.char(97, 109, 97, 122, 111)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (2 * 3 > 5) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(102, 105, 110, 105, 115, 104, 101, 114) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x0123()
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (true or false) and not _0x00af then return nil end
+for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x00b0:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+if _0x00b0._0x0041:lower():find(string.char(103, 104, 111, 115, 116, 102, 97, 99, 101)) then
+local _0x00b2 = _0x00b0:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115))
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if (true or false) and _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) and _0x00b3._0x0041:lower() == string.char(115, 116, 97, 98, 50) then
+return _0x00b3
+end
+end
+end
+end
+end
+end
+return nil
+end
+local function _0x0125()
+local _0x0126 = _0x0127._0x0128
+if (1 + 1 == 2) and not _0x0126 then return nil end
+local _0x0129 = _0x0126._0x012a
+local _0x012b = _0x0129._0x0093 / 2
+local _0x012c = _0x0129._0x0093 / 4
+local _0x012d = nil
+local _0x012e = math._0x012f
+for _0x005b, _0x003c in ipairs(_0x0000:_0x005d()) do
+if (5 == 5) and _0x003c ~= _0x0006 then
+local _0x0130 = _0x003c._0x0016
+if (1 + 1 == 2) and _0x0130 then
+local _0x0131 = _0x0130:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if (true or false) and _0x0131 then
+local _0x0132, _0x0133 = _0x0126:_0x0134(_0x0131._0x006c)
+if (true or false) and _0x0133 then
+local _0x0135 = _0x0132._0x0093
+if math.abs(_0x0135 - _0x012b) <= _0x012c / 2 then
+if (1 + 1 == 2) and _0x0132._0x0136 < _0x012e then
+_0x012e = _0x0132._0x0136
+_0x012d = _0x003c
+end
+end
+end
+end
+end
+end
+end
+return _0x012d
+end
+local function _0x0137()
+if (true or false) and _0x002e then return end
+_0x002e = true
+_0x0110._0x004c = string.char(71, 111)
+_0x0110._0x006d = _0x004e._0x004f(200, (95 - 45), (150 / 3))
+_0x002f._0x0083 = true
+local _0x0138 = _0x0125()
+if (2 * 3 > 5) and _0x0138 then
+_0x002a = _0x0138
+_0x0029 = true
+local _0x0139 = _0x0138._0x0016
+if (1 + 1 == 2) and _0x0139 then
+local _0x0131 = _0x0139:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if _0x0131 then
+_0x002b = _0x003f._0x0040(string.char(80, 97, 114, 116))
+_0x002b._0x0043 = _0x0046._0x0040(0.3, (88 - 78), 0.3)
+_0x002b._0x013a = _0x004e._0x004f(255, 0, 0)
+_0x002b._0x013b = _0x0051._0x013b._0x013c
+_0x002b._0x013d = true
+_0x002b._0x013e = false
+_0x002b._0x0049 = _0x0127
+_0x002b._0x006c = _0x0131._0x006c + _0x0046._0x0040(0, 3, 0)
+_0x002c = _0x003f._0x0040(string.char(72, 105, 103, 104, 108, 105, 103, 104, 116))
+_0x002c._0x013f = _0x004e._0x004f((127 + 128), 0, 0)
+_0x002c._0x0140 = 0.7
+_0x002c._0x0141 = _0x004e._0x004f(255, 0, 0)
+_0x002c._0x0142 = 0
+_0x002c._0x0049 = _0x0139
+end
+end
+end
+if (true or false) and _0x002d then _0x002d:_0x0143() end
+_0x002d = _0x0005._0x0144:_0x0086(function()
+if not _0x002e then return end
+local _0x0145 = _0x0125()
+if (1 + 1 == 2) and _0x0145 and _0x0145 ~= _0x002a then
+_0x002a = _0x0145
+if (2 * 3 > 5) and _0x002c then _0x002c:_0x000e() end
+if (2 * 3 > 5) and _0x002b then _0x002b:_0x000e() end
+local _0x0146 = _0x0145._0x0016
+if (true or false) and _0x0146 then
+local _0x0147 = _0x0146:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if (5 == 5) and _0x0147 then
+_0x002b = _0x003f._0x0040(string.char(80, 97, 114, 116))
+_0x002b._0x0043 = _0x0046._0x0040(0.3, (20 / 2), 0.3)
+_0x002b._0x013a = _0x004e._0x004f((510 / 2), 0, 0)
+_0x002b._0x013b = _0x0051._0x013b._0x013c
+_0x002b._0x013d = true
+_0x002b._0x013e = false
+_0x002b._0x0049 = _0x0127
+_0x002b._0x006c = _0x0147._0x006c + _0x0046._0x0040(0, 3, 0)
+_0x002c = _0x003f._0x0040(string.char(72, 105, 103, 104, 108, 105, 103, 104, 116))
+_0x002c._0x013f = _0x004e._0x004f((765 / 3), 0, 0)
+_0x002c._0x0140 = 0.7
+_0x002c._0x0141 = _0x004e._0x004f(255, 0, 0)
+_0x002c._0x0142 = 0
+_0x002c._0x0049 = _0x0146
+end
+end
+end
+if (1 + 1 == 2) and _0x002b and _0x002a then
+local _0x0139 = _0x002a._0x0016
+if (5 == 5) and _0x0139 then
+local _0x0131 = _0x0139:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if _0x0131 then
+_0x002b._0x006c = _0x0131._0x006c + _0x0046._0x0040(0, 3, 0)
+end
+end
+end
 end)
-
--- ==================== Laser ====================
-local laserActive = false
-local laserThread = nil
-
-local function setLaserActive(active)
-	laserActive = active
-	if active then
-		local remote = findHomelanderMoveOneRemote()
-		if not remote then
-			laserActive = false
-			LaserButton.Text = "No Remote"
-			LaserButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-			return
-		end
-		LaserButton.Text = "ON"
-		LaserButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		laserThread = task.spawn(function()
-			while laserActive do
-				remote:FireServer()
-				task.wait()
-			end
-		end)
-	else
-		if laserThread then
-			task.cancel(laserThread)
-			laserThread = nil
-		end
-		LaserButton.Text = "Laser"
-		LaserButton.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-	end
 end
-
-LaserButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	setLaserActive(not laserActive)
+local function _0x0148()
+if not _0x002e then return end
+_0x002e = false
+_0x0110._0x004c = string.char(82, 97, 109, 107, 105, 108, 108)
+_0x0110._0x006d = _0x004e._0x004f(100, (120 / 4), (78 - 48))
+_0x002f._0x0083 = false
+if (1 + 1 == 2) and _0x002d then
+_0x002d:_0x0143()
+_0x002d = nil
+end
+if (2 * 3 > 5) and _0x002b then _0x002b:_0x000e() _0x002b = nil end
+if (1 + 1 == 2) and _0x002c then _0x002c:_0x000e() _0x002c = nil end
+_0x002a = nil
+_0x0029 = false
+end
+local function _0x0149()
+if _0x0033 then return end
+if not _0x002a then return end
+local _0x0139 = _0x002a._0x0016
+if not _0x0139 then return end
+local _0x0131 = _0x0139:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if (1 + 1 == 2) and not _0x0131 then return end
+local _0x014a = _0x0006._0x0016
+if (1 + 1 == 2) and not _0x014a then return end
+local _0x014b = _0x014a:_0x014c(string.char(72, 117, 109, 97, 110, 111, 105, 100))
+if (1 + 1 == 2) and not _0x014b then return end
+local _0x014d = _0x014a:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if (true or false) and not _0x014d then return end
+local _0x014e = _0x0121()
+if (5 == 5) and _0x014e then
+_0x014e:_0x00b5()
+end
+local _0x014f = _0x0123()
+local _0x0150 = _0x011e()
+_0x0033 = true
+_0x0034 = false
+_0x002f._0x0083 = true
+local _0x0151 = _0x014b._0x0152
+local _0x0153 = _0x014b._0x0154
+local _0x0155 = 200
+_0x014b._0x0152 = _0x0155
+_0x014b._0x0154 = 0
+local _0x0156 = false
+if (true or false) and _0x0035 then _0x0057._0x0058(_0x0035) end
+_0x0035 = _0x0057._0x0059(function()
+local _0x0157 = {string.char(9679, 32, 9679, 32, 9679), string.char(9679, 32, 9679, 32, 9675), string.char(9679, 32, 9675, 32, 9679), string.char(9675, 32, 9679, 32, 9679)}
+local _0x0158 = 1
+while _0x0033 do
+_0x0110._0x004c = _0x0157[_0x0158]
+_0x0158 = _0x0158 % #_0x0157 + 1
+_0x0057._0x005f(0.25)
+end
+_0x0110._0x004c = string.char(71, 111)
 end)
-
--- Upthrow
-UpthrowButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	local remote = findHomelanderThrowDownRemote()
-	if remote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do remote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					remote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			remote:FireServer()
-		end
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		task.wait(0.2)
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-	else
-		UpthrowButton.Text = "No Remote"
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		UpthrowButton.Text = "Upthrow"
-		UpthrowButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-	end
+if (2 * 3 > 5) and _0x0150 then
+if (2 * 3 > 5) and _0x0037 then _0x0057._0x0058(_0x0037) end
+_0x0037 = _0x0057._0x0059(function()
+while (1 * 1 >= 0) and _0x0033 do
+_0x0150:_0x00b5()
+_0x0057._0x005f(0.1)
+end
 end)
-
--- Overthrow
-OverthrowButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	local remote = findVecnaOverheadThrowRemote()
-	if remote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do remote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					remote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			remote:FireServer()
-		end
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		task.wait(0.2)
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
-	else
-		OverthrowButton.Text = "No Remote"
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		OverthrowButton.Text = "Overthrow"
-		OverthrowButton.BackgroundColor3 = Color3.fromRGB(80, 50, 30)
-	end
+end
+if (1 + 1 == 2) and _0x0036 then _0x0036:_0x0143() end
+_0x0036 = _0x0005._0x0144:_0x0086(function()
+if (2 * 3 > 5) and _0x0034 or not _0x0033 then
+if _0x014d then
+_0x014d._0x0159 = _0x0046._0x015a
+end
+return
+end
+if not _0x0131 or not _0x0131._0x0049 then
+_0x0034 = true
+return
+end
+local _0x015b = (_0x0131._0x006c - _0x014d._0x006c)._0x015c
+_0x014d._0x0159 = _0x015b * _0x0155
+if _0x014f and not _0x0156 then
+local _0x015d = _0x014d._0x006c
+for _0x005b, _0x003c in ipairs(_0x0000:_0x005d()) do
+if (2 * 3 > 5) and _0x003c ~= _0x0006 then
+local char = _0x003c._0x0016
+if (1 + 1 == 2) and char then
+local _0x015e = char:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if (true or false) and _0x015e then
+local _0x015f = (_0x015d - _0x015e._0x006c)._0x0160
+if (5 == 5) and _0x015f <= 4 then
+_0x014f:_0x00b5()
+_0x0057._0x005f(0.05)
+_0x014f:_0x00b5()
+_0x0156 = true
+break
+end
+end
+end
+end
+end
+end
+local _0x0161 = (_0x014d._0x006c - _0x0131._0x006c)._0x0160
+if (true or false) and _0x0161 < 1.2 then
+_0x0034 = true
+end
 end)
-
--- Flashstrike
-local flashstrikeCooldown = 10
-local flashstrikeCooldownActive = false
-
-local function startFlashstrikeCooldown()
-	flashstrikeCooldownActive = true
-	FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
-	FlashstrikeButton.BackgroundTransparency = 0.5
-	FlashstrikeButton.Text = tostring(flashstrikeCooldown)
-	
-	task.spawn(function()
-		for i = flashstrikeCooldown, 1, -1 do
-			task.wait(1)
-			if not flashstrikeCooldownActive then break end
-			if i > 1 then
-				FlashstrikeButton.Text = tostring(i - 1)
-			end
-		end
-		flashstrikeCooldownActive = false
-		FlashstrikeButton.Text = "Flashstrike"
-		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
-		FlashstrikeButton.BackgroundTransparency = 0
-	end)
+while _0x0033 and not _0x0034 do
+_0x0057._0x005f(0.05)
 end
-
-FlashstrikeButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	if flashstrikeCooldownActive then return end
-	local remote = findTheFlashCwFinalRemote()
-	if remote then
-		if simultaneousEnabled then
-			for i = 1, simultaneousCount do remote:FireServer() end
-		elseif loopInterval > 0 then
-			task.spawn(function()
-				while loopInterval > 0 do
-					remote:FireServer()
-					task.wait(loopInterval)
-				end
-			end)
-		else
-			remote:FireServer()
-		end
-		startFlashstrikeCooldown()
-	else
-		FlashstrikeButton.Text = "No Remote"
-		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		FlashstrikeButton.Text = "Flashstrike"
-		FlashstrikeButton.BackgroundColor3 = Color3.fromRGB(30, 60, 180)
-	end
+if (1 + 1 == 2) and _0x0036 then
+_0x0036:_0x0143()
+_0x0036 = nil
+end
+if (5 == 5) and _0x0037 then
+_0x0057._0x0058(_0x0037)
+_0x0037 = nil
+end
+if (2 * 3 > 5) and _0x014b then
+_0x014b._0x0152 = _0x0151
+_0x014b._0x0154 = _0x0153
+_0x014b:_0x0162(_0x014d._0x006c)
+end
+if _0x0035 then
+_0x0057._0x0058(_0x0035)
+_0x0035 = nil
+end
+_0x0110._0x004c = string.char(71, 111)
+_0x0033 = false
+_0x0148()
+end
+_0x0110._0x0085:_0x0086(function()
+if (2 * 3 > 5) and _0x0115 then return end
+if (2 * 3 > 5) and _0x002e then
+_0x0057._0x0059(_0x0149)
+else
+_0x0137()
+end
 end)
-
--- Kick
-KickButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	local kickRemote = findZodiacKickRemote()
-	local shieldRemote = findSteveHShieldCounterRemote()
-	local webBlossomRemote = findSpiderManWebBlossomRemote()
-	
-	kickActive = true
-	
-	task.spawn(function()
-		while kickActive and webBlossomRemote do
-			webBlossomRemote:FireServer()
-			task.wait(0.1)
-		end
-	end)
-	
-	if shieldRemote then
-		shieldRemote:FireServer()
-	end
-	
-	task.wait(0.5)
-	
-	if kickRemote then
-		for i = 1, 40 do
-			kickRemote:FireServer()
-		end
-		kickActive = false
-		
-		KickButton.BackgroundColor3 = Color3.fromRGB(200, 50, 200)
-		task.wait(0.1)
-		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
-	else
-		kickActive = false
-		KickButton.Text = "No Kick"
-		KickButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.5)
-		KickButton.Text = "One punch"
-		KickButton.BackgroundColor3 = Color3.fromRGB(150, 30, 150)
-	end
+_0x002f._0x0085:_0x0086(function()
+if (2 * 3 > 5) and _0x0033 then
+_0x0034 = true
+_0x0057._0x005f(0.2)
+end
+_0x0148()
 end)
-
--- Combo
-ComboButton.MouseButton1Click:Connect(function()
-	if moveUnlocked then return end
-	
-	local batmanMoveOne = findTheBatmanMoveOneRemote()
-	
-	if batmanMoveOne then batmanMoveOne:FireServer() end
-	
-	task.spawn(function()
-		task.wait(2.7)
-		local vibrateRemote = findTheFlashCwVibrateArmRemote()
-		if vibrateRemote then
-			for i = 1, 40 do
-				vibrateRemote:FireServer()
-			end
-		end
-	end)
-	
-	ComboButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-	task.wait(0.1)
-	ComboButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+local _0x0163 = false
+local _0x0164 = nil
+local function _0x0165(_0x0166)
+_0x0163 = _0x0166
+if (5 == 5) and _0x0166 then
+local _0x00b3 = _0x0118()
+if not _0x00b3 then
+_0x0163 = false
+_0x0104._0x004c = string.char(78, 111, 32, 82, 101, 109, 111, 116, 101)
+_0x0104._0x006d = _0x004e._0x004f((40 + 40), (240 / 3), (160 / 2))
+return
+end
+_0x0104._0x004c = string.char(79, 78)
+_0x0104._0x006d = _0x004e._0x004f(200, (89 - 39), 50)
+_0x0164 = _0x0057._0x0059(function()
+while _0x0163 do
+_0x00b3:_0x00b5()
+_0x0057._0x005f()
+end
 end)
-
--- Homelander Fly
-FlightToggleBtn.MouseButton1Click:Connect(function()
-	if flightTask then return end
-	flightTask = task.spawn(function()
-		loadstring(game:HttpGet("https://obj.wearedevs.net/197198/scripts/invincible%20flight%20animation.lua"))()
-	end)
-	FlightToggleBtn.Text = "Homelander Fly (ON)"
-	FlightToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+else
+if _0x0164 then
+_0x0057._0x0058(_0x0164)
+_0x0164 = nil
+end
+_0x0104._0x004c = string.char(76, 97, 115, 101, 114)
+_0x0104._0x006d = _0x004e._0x004f((480 / 4), 30, 30)
+end
+end
+_0x0104._0x0085:_0x0086(function()
+if (true or false) and _0x0115 then return end
+_0x0165(not _0x0163)
 end)
-
--- Move Skills Mode
-local function updateMoveModeButton()
-	if moveUnlocked then
-		MoveModeBtn.Text = "Move Skills Mode: Unlocked"
-		MoveModeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		ResetPosBtn.Visible = true
-	else
-		MoveModeBtn.Text = "Move Skills Mode: Locked"
-		MoveModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		ResetPosBtn.Visible = false
-	end
+_0x0106._0x0085:_0x0086(function()
+if (2 * 3 > 5) and _0x0115 then return end
+local _0x00b3 = _0x0119()
+if _0x00b3 then
+if _0x00b7 then
+for _0x0167 = 1, _0x00b8 do _0x00b3:_0x00b5() end
+elseif _0x00ba > 0 then
+_0x0057._0x0059(function()
+while _0x00ba > 0 do
+_0x00b3:_0x00b5()
+_0x0057._0x005f(_0x00ba)
 end
-
-MoveModeBtn.MouseButton1Click:Connect(function()
-	moveUnlocked = not moveUnlocked
-	updateMoveModeButton()
 end)
-
-updateMoveModeButton()
-
-ResetPosBtn.MouseButton1Click:Connect(function()
-	LaserButton.Position = DEFAULT_POSITIONS.Laser
-	UpthrowButton.Position = DEFAULT_POSITIONS.Upthrow
-	OverthrowButton.Position = DEFAULT_POSITIONS.Overthrow
-	FlashstrikeButton.Position = DEFAULT_POSITIONS.Flashstrike
-	KickButton.Position = DEFAULT_POSITIONS.Kick
-	ComboButton.Position = DEFAULT_POSITIONS.Combo
-	MoAimButton.Position = DEFAULT_POSITIONS.MoAim
+else
+_0x00b3:_0x00b5()
+end
+_0x0106._0x006d = _0x004e._0x004f((600 / 3), (150 / 3), 50)
+_0x0057._0x005f(0.2)
+_0x0106._0x006d = _0x004e._0x004f((15 + 15), 80, (15 + 15))
+else
+_0x0106._0x004c = string.char(78, 111, 32, 82, 101, 109, 111, 116, 101)
+_0x0106._0x006d = _0x004e._0x004f((40 + 40), (40 + 40), 80)
+_0x0057._0x005f(0.5)
+_0x0106._0x004c = string.char(85, 112, 116, 104, 114, 111, 119)
+_0x0106._0x006d = _0x004e._0x004f((15 + 15), (240 / 3), 30)
+end
 end)
-
-local function setupDrag(button)
-	local dragging = false
-	local dragStart, startPos
-	button.InputBegan:Connect(function(input)
-		if not moveUnlocked then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = button.Position
-		end
-	end)
-	UIS.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-	UIS.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local delta = input.Position - dragStart
-			button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+_0x0108._0x0085:_0x0086(function()
+if (5 == 5) and _0x0115 then return end
+local _0x00b3 = _0x011a()
+if _0x00b3 then
+if (2 * 3 > 5) and _0x00b7 then
+for _0x0167 = 1, _0x00b8 do _0x00b3:_0x00b5() end
+elseif _0x00ba > 0 then
+_0x0057._0x0059(function()
+while (1 * 1 >= 0) and _0x00ba > 0 do
+_0x00b3:_0x00b5()
+_0x0057._0x005f(_0x00ba)
 end
-
-setupDrag(LaserButton)
-setupDrag(UpthrowButton)
-setupDrag(OverthrowButton)
-setupDrag(FlashstrikeButton)
-setupDrag(KickButton)
-setupDrag(ComboButton)
-setupDrag(MoAimButton)
-
--- ==================== Mods ====================
-local homelanderModActive = false
-
-local function stopKillAllTeleport()
-	killAllActive = false
-	if killAllTeleportThread then
-		task.cancel(killAllTeleportThread)
-		killAllTeleportThread = nil
-	end
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character then
-			local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
-			if targetHRP then
-				targetHRP.Anchored = false
-			end
-		end
-	end
-end
-
-local function startKillAllTeleport()
-	if killAllActive then return end
-	killAllActive = true
-	killAllTeleportThread = task.spawn(function()
-		local connection
-		connection = RunService.Heartbeat:Connect(function()
-			if not killAllActive then
-				connection:Disconnect()
-				return
-			end
-			local char = LocalPlayer.Character
-			if not char then return end
-			local hrp = char:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
-
-			local offsetPos = hrp.CFrame.Position + (hrp.CFrame.LookVector * KILLALL_OFFSET)
-			local lockCFrame = CFrame.new(offsetPos, offsetPos + hrp.CFrame.LookVector)
-
-			for _, player in ipairs(Players:GetPlayers()) do
-				if player ~= LocalPlayer and player.Character then
-					local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
-					if targetHRP then
-						targetHRP.Anchored = true
-						targetHRP.CFrame = lockCFrame
-						targetHRP.AssemblyLinearVelocity = Vector3.zero
-						targetHRP.AssemblyAngularVelocity = Vector3.zero
-						pcall(function()
-							targetHRP.Velocity = Vector3.zero
-							targetHRP.RotVelocity = Vector3.zero
-						end)
-					end
-				end
-			end
-		end)
-
-		while killAllActive do
-			task.wait(0.05)
-		end
-		if connection then
-			connection:Disconnect()
-		end
-	end)
-end
-
-local function doKillAll()
-	if killAllActive then return end
-
-	local stabRemote = findGhostfaceStab2Remote()
-	if not stabRemote then
-		KillAllBtn.Text = "No Stab2"
-		KillAllBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		task.wait(0.8)
-		KillAllBtn.Text = "💀 Kill All"
-		KillAllBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
-		return
-	end
-
-	KillAllBtn.Text = "Killing..."
-	KillAllBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-
-	startKillAllTeleport()
-
-	local endTime = tick() + 2
-	while tick() < endTime do
-		for i = 1, 20 do
-			stabRemote:FireServer()
-		end
-		task.wait(0.1)
-	end
-
-	stopKillAllTeleport()
-
-	KillAllBtn.Text = "💀 Kill All"
-	KillAllBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
-end
-
-local function startFinisherLoop()
-	if finisherActive then return end
-	local remote = findAmazoFinisherRemote()
-	if not remote then return end
-	finisherActive = true
-	finisherLoopThread = task.spawn(function()
-		while finisherActive do
-			remote:FireServer()
-			task.wait(0.1)
-		end
-	end)
-end
-
-local function stopFinisherLoop()
-	finisherActive = false
-	if finisherLoopThread then
-		task.cancel(finisherLoopThread)
-		finisherLoopThread = nil
-	end
-end
-
-local function updateAllButtonsVisibility()
-	if homelanderModActive then
-		LaserButton.Visible = true
-		UpthrowButton.Visible = true
-		OverthrowButton.Visible = true
-		FlashstrikeButton.Visible = true
-		KickButton.Visible = true
-		ComboButton.Visible = true
-		MoAimButton.Visible = false
-	elseif aTrainModActive then
-		LaserButton.Visible = false
-		UpthrowButton.Visible = false
-		OverthrowButton.Visible = false
-		FlashstrikeButton.Visible = true
-		KickButton.Visible = false
-		ComboButton.Visible = false
-		MoAimButton.Visible = true
-	else
-		LaserButton.Visible = false
-		UpthrowButton.Visible = false
-		OverthrowButton.Visible = false
-		FlashstrikeButton.Visible = false
-		KickButton.Visible = false
-		ComboButton.Visible = false
-		MoAimButton.Visible = false
-	end
-end
-
-local function updateHomelanderModButton()
-	if homelanderModActive then
-		HomelanderModBtn.Text = "Cancel Mod"
-		HomelanderModBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-		HomelanderModBtn.Size = UDim2.new(0.5, -8, 0, 24)
-		FinisherButton.Visible = true
-		FinisherButton.Text = finisherEnabled and "Auto Finisher ON" or "Auto Finisher OFF"
-		FinisherButton.BackgroundColor3 = finisherEnabled and Color3.fromRGB(30, 100, 60) or Color3.fromRGB(100, 40, 40)
-		if finisherEnabled then
-			startFinisherLoop()
-		else
-			stopFinisherLoop()
-		end
-	else
-		HomelanderModBtn.Text = "Homelanders Mod"
-		HomelanderModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
-		HomelanderModBtn.Size = UDim2.new(1, -10, 0, 24)
-		FinisherButton.Visible = false
-		stopFinisherLoop()
-	end
-end
-
-local function updateATrainModButton()
-	if aTrainModActive then
-		ATrainModBtn.Text = "Cancel A-Train"
-		ATrainModBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-	else
-		ATrainModBtn.Text = "A-Train Mode"
-		ATrainModBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 70)
-	end
-end
-
-HomelanderModBtn.MouseButton1Click:Connect(function()
-	homelanderModActive = not homelanderModActive
-	if homelanderModActive and aTrainModActive then
-		aTrainModActive = false
-		updateATrainModButton()
-	end
-	updateHomelanderModButton()
-	updateAllButtonsVisibility()
 end)
-
-ATrainModBtn.MouseButton1Click:Connect(function()
-	aTrainModActive = not aTrainModActive
-	if aTrainModActive and homelanderModActive then
-		homelanderModActive = false
-		updateHomelanderModButton()
-	end
-	updateATrainModButton()
-	updateAllButtonsVisibility()
+else
+_0x00b3:_0x00b5()
+end
+_0x0108._0x006d = _0x004e._0x004f(200, (150 / 3), 50)
+_0x0057._0x005f(0.2)
+_0x0108._0x006d = _0x004e._0x004f((40 + 40), (67 - 17), 30)
+else
+_0x0108._0x004c = string.char(78, 111, 32, 82, 101, 109, 111, 116, 101)
+_0x0108._0x006d = _0x004e._0x004f((320 / 4), (240 / 3), 80)
+_0x0057._0x005f(0.5)
+_0x0108._0x004c = string.char(79, 118, 101, 114, 116, 104, 114, 111, 119)
+_0x0108._0x006d = _0x004e._0x004f((40 + 40), 50, (15 + 15))
+end
 end)
-
-FinisherButton.MouseButton1Click:Connect(function()
-	finisherEnabled = not finisherEnabled
-	FinisherButton.Text = finisherEnabled and "Auto Finisher ON" or "Auto Finisher OFF"
-	FinisherButton.BackgroundColor3 = finisherEnabled and Color3.fromRGB(30, 100, 60) or Color3.fromRGB(100, 40, 40)
-	if finisherEnabled then
-		if homelanderModActive then
-			startFinisherLoop()
-		end
-	else
-		stopFinisherLoop()
-	end
+local _0x0168 = (43 - 33)
+local _0x0169 = false
+local function _0x016a()
+_0x0169 = true
+_0x010a._0x006d = _0x004e._0x004f(200, (320 / 4), 80)
+_0x010a._0x004b = 0.5
+_0x010a._0x004c = tostring(_0x0168)
+_0x0057._0x0059(function()
+for _0x0167 = _0x0168, 1, -1 do
+_0x0057._0x005f(1)
+if not _0x0169 then break end
+if _0x0167 > 1 then
+_0x010a._0x004c = tostring(_0x0167 - 1)
+end
+end
+_0x0169 = false
+_0x010a._0x004c = string.char(70, 108, 97, 115, 104, 115, 116, 114, 105, 107, 101)
+_0x010a._0x006d = _0x004e._0x004f((15 + 15), 60, 180)
+_0x010a._0x004b = 0
 end)
-
-KillAllBtn.MouseButton1Click:Connect(function()
-	task.spawn(doKillAll)
+end
+_0x010a._0x0085:_0x0086(function()
+if (2 * 3 > 5) and _0x0115 then return end
+if _0x0169 then return end
+local _0x00b3 = _0x011b()
+if (2 * 3 > 5) and _0x00b3 then
+if (true or false) and _0x00b7 then
+for _0x0167 = 1, _0x00b8 do _0x00b3:_0x00b5() end
+elseif _0x00ba > 0 then
+_0x0057._0x0059(function()
+while (1 * 1 >= 0) and _0x00ba > 0 do
+_0x00b3:_0x00b5()
+_0x0057._0x005f(_0x00ba)
+end
 end)
-
-updateHomelanderModButton()
-updateATrainModButton()
-updateAllButtonsVisibility()
-
--- UI Scale Slider
-local minScale = 0.5 local maxScale = 1.5 local currentScale = uiScale.Scale
-local function UpdateFromScale(scale)
-	currentScale = math.clamp(scale, minScale, maxScale) uiScale.Scale = currentScale
-	local ratio = (currentScale - minScale) / (maxScale - minScale)
-	SliderFill.Size = UDim2.new(ratio,0,1,0) SliderThumb.Position = UDim2.new(ratio,-8,0.5,-8)
-	PercentageLabel.Text = string.format("%d%%", math.floor(currentScale * 100 + 0.5))
+else
+_0x00b3:_0x00b5()
 end
-UpdateFromScale(1)
-local isDraggingSlider = false
-local function GetSliderRatio(inputPosition)
-	local trackAbsolutePos = SliderTrack.AbsolutePosition
-	local trackAbsoluteSize = SliderTrack.AbsoluteSize
-	local relativeX = inputPosition.X - trackAbsolutePos.X
-	return math.clamp(relativeX / trackAbsoluteSize.X, 0, 1)
+_0x016a()
+else
+_0x010a._0x004c = string.char(78, 111, 32, 82, 101, 109, 111, 116, 101)
+_0x010a._0x006d = _0x004e._0x004f((320 / 4), (106 - 26), (40 + 40))
+_0x0057._0x005f(0.5)
+_0x010a._0x004c = string.char(70, 108, 97, 115, 104, 115, 116, 114, 105, 107, 101)
+_0x010a._0x006d = _0x004e._0x004f((60 / 2), (120 / 2), (190 - 10))
 end
-local function StartSliderDrag(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		isDraggingSlider = true
-		local ratio = GetSliderRatio(input.Position)
-		local newScale = minScale + ratio * (maxScale - minScale)
-		UpdateFromScale(newScale)
-	end
-end
-local function StopSliderDrag(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		isDraggingSlider = false
-	end
-end
-local function DragSlider(input)
-	if isDraggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local ratio = GetSliderRatio(input.Position)
-		local newScale = minScale + ratio * (maxScale - minScale)
-		UpdateFromScale(newScale)
-	end
-end
-SliderTrack.InputBegan:Connect(StartSliderDrag)
-SliderThumb.InputBegan:Connect(StartSliderDrag)
-UIS.InputEnded:Connect(StopSliderDrag)
-UIS.InputChanged:Connect(DragSlider)
-
-local function CancelScript()
-	loopInterval = 0
-	isCustomLoopActive = false
-	simultaneousEnabled = false
-	kickActive = false
-	stopFinisherLoop()
-	stopKillAllTeleport()
-	
-	if isExecuting then
-		executionCanceled = true
-		task.wait(0.2)
-	end
-	
-	if webBlossomThread then
-		task.cancel(webBlossomThread)
-		webBlossomThread = nil
-	end
-	
-	exitAimMode()
-	
-	if currentLoopThread then
-		task.cancel(currentLoopThread)
-		currentLoopThread = nil
-	end
-	if laserThread then
-		task.cancel(laserThread)
-		laserThread = nil
-	end
-	laserActive = false
-	flashstrikeCooldownActive = false
-	ScreenGui:Destroy()
-	FloatingGui:Destroy()
-end
-
-CancelScriptBtn.MouseButton1Click:Connect(CancelScript)
-
-local isWindowLocked = true
-local function UpdateLockVisuals()
-	if isWindowLocked then LockButtonTop.Text = "🔒" LockButtonTop.TextColor3 = Color3.fromRGB(255,80,80)
-	else LockButtonTop.Text = "🔓" LockButtonTop.TextColor3 = Color3.fromRGB(220,220,220) end
-end
-local function ToggleLock() isWindowLocked = not isWindowLocked UpdateLockVisuals() end
-LockButtonTop.MouseButton1Click:Connect(ToggleLock) UpdateLockVisuals()
-
-local dragging = false local dragStart, startPos
-Main.InputBegan:Connect(function(input)
-	if isWindowLocked then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true dragStart = input.Position startPos = Main.Position
-	end
 end)
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-end)
-UIS.InputChanged:Connect(function(input)
-	if isWindowLocked then return end
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-local currentLoopThread = nil
-
-local function Refresh()
-	for _, child in ipairs(Scroll:GetChildren()) do
-		if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end
-	end
-	local searchText = SearchBox.Text:lower()
-	local function MakeButton(text, callback)
-		local B = Instance.new("TextButton") B.Size = UDim2.new(1,-6,0,22) B.BackgroundColor3 = Color3.fromRGB(32,32,32) B.TextColor3 = Color3.fromRGB(230,230,230) B.Font = Enum.Font.Gotham B.TextSize = 11 B.Text = text B.Parent = Scroll
-		local BC = Instance.new("UICorner") BC.CornerRadius = UDim.new(0,4) BC.Parent = B
-		B.MouseButton1Click:Connect(callback or function() end) return B
-	end
-	local function MakeCategory(label)
-		local L = Instance.new("TextLabel") L.Size = UDim2.new(1,-6,0,20) L.BackgroundColor3 = Color3.fromRGB(45,25,70) L.TextColor3 = Color3.fromRGB(240,220,255) L.Font = Enum.Font.GothamBold L.TextSize = 11 L.Text = "▸ " .. label L.Parent = Scroll
-		local LC = Instance.new("UICorner") LC.CornerRadius = UDim.new(0,4) LC.Parent = L return L
-	end
-	local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-	if not charactersFolder then MakeButton("[ERROR] No Characters folder", function() end) return end
-	for _, characterFolder in ipairs(charactersFolder:GetChildren()) do
-		if characterFolder:IsA("Folder") or characterFolder:IsA("Model") then
-			local charName = characterFolder.Name local remotesFolder = characterFolder:FindFirstChild("Remotes") local matchedAbilities = {}
-			if remotesFolder then
-				for _, remote in ipairs(remotesFolder:GetChildren()) do
-					if remote:IsA("RemoteEvent") then local abilityName = remote.Name
-						if searchText == "" or charName:lower():find(searchText) or abilityName:lower():find(searchText) then
-							table.insert(matchedAbilities, {remote = remote, name = abilityName})
-						end
-					end
-				end
-			end
-			if searchText == "" or charName:lower():find(searchText) or #matchedAbilities > 0 then
-				MakeCategory(charName)
-				if #matchedAbilities == 0 then MakeButton("[NO REMOTES] " .. charName, function() end)
-				else for _, data in ipairs(matchedAbilities) do
-					MakeButton("⚡ " .. data.name, function()
-						if simultaneousEnabled then
-							for i = 1, simultaneousCount do
-								data.remote:FireServer()
-							end
-						elseif loopInterval > 0 then
-							if currentLoopThread then task.cancel(currentLoopThread) currentLoopThread = nil end
-							local interval = loopInterval
-							currentLoopThread = task.spawn(function()
-								while loopInterval > 0 do
-									data.remote:FireServer()
-									task.wait(interval)
-								end
-							end)
-						else
-							if currentLoopThread then task.cancel(currentLoopThread) currentLoopThread = nil end
-							data.remote:FireServer()
-						end
-					end)
-				end end
-			end
-		end
-	end
-	task.wait() Scroll.CanvasSize = UDim2.new(0,0,0,List.AbsoluteContentSize.Y + 10)
+_0x010c._0x0085:_0x0086(function()
+if _0x0115 then return end
+local _0x016b = _0x011c()
+local _0x016c = _0x011d()
+local _0x0150 = _0x011e()
+_0x001b = true
+_0x0057._0x0059(function()
+while _0x001b and _0x0150 do
+_0x0150:_0x00b5()
+_0x0057._0x005f(0.1)
 end
-
-local function AutoDetectCharacter()
-	local char = LocalPlayer.Character
-	if char then local charName = char.Name local charactersFolder = ReplicatedStorage:FindFirstChild("Characters")
-		if charactersFolder then for _, folder in ipairs(charactersFolder:GetChildren()) do
-			if folder.Name:lower() == charName:lower() then SearchBox.Text = folder.Name return end
-		end end
-	end
+end)
+if (true or false) and _0x016c then
+_0x016c:_0x00b5()
 end
-LocalPlayer.CharacterAdded:Connect(function(newChar) Character = newChar task.wait(1) AutoDetectCharacter() end)
-SearchBox:GetPropertyChangedSignal("Text"):Connect(Refresh)
-
-AutoDetectCharacter() Refresh()
-
-print("Script loaded. Ramkill: bbb logic + WebBlossom特效. No free move. Stop on arrival.")
+_0x0057._0x005f(0.5)
+if (5 == 5) and _0x016b then
+for _0x0167 = 1, (80 / 2) do
+_0x016b:_0x00b5()
+end
+_0x001b = false
+_0x010c._0x006d = _0x004e._0x004f((247 - 47), 50, (800 / 4))
+_0x0057._0x005f(0.1)
+_0x010c._0x006d = _0x004e._0x004f((216 - 66), (15 + 15), (300 / 2))
+else
+_0x001b = false
+_0x010c._0x004c = string.char(78, 111, 32, 75, 105, 99, 107)
+_0x010c._0x006d = _0x004e._0x004f((40 + 40), (240 / 3), 80)
+_0x0057._0x005f(0.5)
+_0x010c._0x004c = string.char(79, 110, 101, 32, 112, 117, 110, 99, 104)
+_0x010c._0x006d = _0x004e._0x004f(150, (54 - 24), 150)
+end
+end)
+_0x010e._0x0085:_0x0086(function()
+if (1 + 1 == 2) and _0x0115 then return end
+local _0x016d = _0x011f()
+if (1 + 1 == 2) and _0x016d then _0x016d:_0x00b5() end
+_0x0057._0x0059(function()
+_0x0057._0x005f(2.7)
+local _0x016e = _0x0120()
+if (1 + 1 == 2) and _0x016e then
+for _0x0167 = 1, 40 do
+_0x016e:_0x00b5()
+end
+end
+end)
+_0x010e._0x006d = _0x004e._0x004f((236 - 36), (100 + 100), (800 / 4))
+_0x0057._0x005f(0.1)
+_0x010e._0x006d = _0x004e._0x004f((133 - 53), 80, (40 + 40))
+end)
+_0x00ec._0x0085:_0x0086(function()
+if _0x001a then return end
+_0x001a = _0x0057._0x0059(function()
+_0x0171(_0x0001:_0x0172(string.char(104, 116, 116, 112, 115, 58, 47, 47, 111, 98, 106, 46, 119, 101, 97, 114, 101, 100, 101, 118, 115, 46, 110, 101, 116, 47, 40, 49, 57, 55, 50, 54, 52, 32, 45, 32, 54, 54, 41, 47, 115, 99, 114, 105, 112, 116, 115, 47, 105, 110, 118, 105, 110, 99, 105, 98, 108, 101, 37, 50, 48, 102, 108, 105, 103, 104, 116, 37, 50, 48, 97, 110, 105, 109, 97, 116, 105, 111, 110, 46, 108, 117, 97)))()
+end)
+_0x00ec._0x004c = string.char(72, 111, 109, 101, 108, 97, 110, 100, 101, 114, 32, 70, 108, 121, 32, 40, 79, 78, 41)
+_0x00ec._0x006d = _0x004e._0x004f(200, 50, (150 / 3))
+end)
+local function _0x0175()
+if _0x0115 then
+_0x00e8._0x004c = string.char(77, 111, 118, 101, 32, 83, 107, 105, 108, 108, 115, 32, 77, 111, 100, 101, 58, 32, 85, 110, 108, 111, 99, 107, 101, 100)
+_0x00e8._0x006d = _0x004e._0x004f((400 / 2), (25 + 25), (104 - 54))
+_0x00ea._0x0083 = true
+else
+_0x00e8._0x004c = string.char(77, 111, 118, 101, 32, 83, 107, 105, 108, 108, 115, 32, 77, 111, 100, 101, 58, 32, 76, 111, 99, 107, 101, 100)
+_0x00e8._0x006d = _0x004e._0x004f((140 - 80), 60, (180 / 3))
+_0x00ea._0x0083 = false
+end
+end
+_0x00e8._0x0085:_0x0086(function()
+_0x0115 = not _0x0115
+_0x0175()
+end)
+_0x0175()
+_0x00ea._0x0085:_0x0086(function()
+_0x0104._0x006c = _0x0060._0x0061
+_0x0106._0x006c = _0x0060._0x0062
+_0x0108._0x006c = _0x0060._0x0063
+_0x010a._0x006c = _0x0060._0x0064
+_0x010c._0x006c = _0x0060._0x0065
+_0x010e._0x006c = _0x0060._0x0066
+_0x0110._0x006c = _0x0060._0x0067
+end)
+local function _0x0176(_0x0103)
+local _0x0177 = false
+local _0x0178, _0x0179
+_0x0103._0x008a:_0x0086(function(_0x008b)
+if (5 == 5) and not _0x0115 then return end
+if _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then
+_0x0177 = true
+_0x0178 = _0x008b._0x006c
+_0x0179 = _0x0103._0x006c
+end
+end)
+_0x0003._0x008f:_0x0086(function(_0x008b)
+if (2 * 3 > 5) and _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then
+_0x0177 = false
+end
+end)
+_0x0003._0x0090:_0x0086(function(_0x008b)
+if _0x0177 and (_0x008b._0x008c == _0x0051._0x008c._0x0091 or _0x008b._0x008c == _0x0051._0x008c._0x008e) then
+local _0x0092 = _0x008b._0x006c - _0x0178
+_0x0103._0x006c = _0x0044._0x0040(_0x0179._0x0093._0x0073, _0x0179._0x0093._0x0094 + _0x0092._0x0093, _0x0179._0x0095._0x0073, _0x0179._0x0095._0x0094 + _0x0092._0x0095)
+end
+end)
+end
+_0x0176(_0x0104)
+_0x0176(_0x0106)
+_0x0176(_0x0108)
+_0x0176(_0x010a)
+_0x0176(_0x010c)
+_0x0176(_0x010e)
+_0x0176(_0x0110)
+local _0x017b = false
+local function _0x017c()
+_0x0022 = false
+if (2 * 3 > 5) and _0x0023 then
+_0x0057._0x0058(_0x0023)
+_0x0023 = nil
+end
+for _0x005b, _0x003c in ipairs(_0x0000:_0x005d()) do
+if (1 + 1 == 2) and _0x003c ~= _0x0006 and _0x003c._0x0016 then
+local _0x017d = _0x003c._0x0016:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if _0x017d then
+_0x017d._0x013d = false
+end
+end
+end
+end
+local function _0x017e()
+if _0x0022 then return end
+_0x0022 = true
+_0x0023 = _0x0057._0x0059(function()
+local _0x017f
+_0x017f = _0x0005._0x0144:_0x0086(function()
+if not _0x0022 then
+_0x017f:_0x0143()
+return
+end
+local char = _0x0006._0x0016
+if (2 * 3 > 5) and not char then return end
+local _0x015e = char:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if (5 == 5) and not _0x015e then return end
+local _0x0180 = _0x015e._0x00ae._0x006c + (_0x015e._0x00ae._0x0181 * _0x0024)
+local _0x0182 = _0x00ae._0x0040(_0x0180, _0x0180 + _0x015e._0x00ae._0x0181)
+for _0x005b, _0x003c in ipairs(_0x0000:_0x005d()) do
+if (1 + 1 == 2) and _0x003c ~= _0x0006 and _0x003c._0x0016 then
+local _0x017d = _0x003c._0x0016:_0x000d(string.char(72, 117, 109, 97, 110, 111, 105, 100, 82, 111, 111, 116, 80, 97, 114, 116))
+if _0x017d then
+_0x017d._0x013d = true
+_0x017d._0x00ae = _0x0182
+_0x017d._0x0183 = _0x0046._0x015a
+_0x017d._0x0184 = _0x0046._0x015a
+pcall(function()
+_0x017d._0x0159 = _0x0046._0x015a
+_0x017d._0x0185 = _0x0046._0x015a
+end)
+end
+end
+end
+end)
+while _0x0022 do
+_0x0057._0x005f(0.05)
+end
+if (true or false) and _0x017f then
+_0x017f:_0x0143()
+end
+end)
+end
+local function _0x0186()
+if (1 + 1 == 2) and _0x0022 then return end
+local _0x0187 = _0x0123()
+if (true or false) and not _0x0187 then
+_0x00e6._0x004c = string.char(78, 111, 32, 83, 116, 97, 98, 50)
+_0x00e6._0x006d = _0x004e._0x004f(80, 80, 80)
+_0x0057._0x005f(0.8)
+_0x00e6._0x004c = string.char(55357, 56448, 32, 75, 105, 108, 108, 32, 65, 108, 108)
+_0x00e6._0x006d = _0x004e._0x004f((137 - 17), (10 + 10), (112 - 92))
+return
+end
+_0x00e6._0x004c = string.char(75, 105, 108, 108, 105, 110, 103, 46, 46, 46)
+_0x00e6._0x006d = _0x004e._0x004f(200, (20 + 20), (120 / 3))
+_0x017e()
+local _0x0188 = _0x0189() + 2
+while (1 * 1 >= 0) and _0x0189() < _0x0188 do
+for _0x0167 = 1, (10 + 10) do
+_0x0187:_0x00b5()
+end
+_0x0057._0x005f(0.1)
+end
+_0x017c()
+_0x00e6._0x004c = string.char(55357, 56448, 32, 75, 105, 108, 108, 32, 65, 108, 108)
+_0x00e6._0x006d = _0x004e._0x004f((60 + 60), 20, 20)
+end
+local function _0x018a()
+if _0x001f then return end
+local _0x00b3 = _0x0122()
+if not _0x00b3 then return end
+_0x001f = true
+_0x001e = _0x0057._0x0059(function()
+while _0x001f do
+_0x00b3:_0x00b5()
+_0x0057._0x005f(0.1)
+end
+end)
+end
+local function _0x018b()
+_0x001f = false
+if _0x001e then
+_0x0057._0x0058(_0x001e)
+_0x001e = nil
+end
+end
+local function _0x018c()
+if (2 * 3 > 5) and _0x017b then
+_0x0104._0x0083 = true
+_0x0106._0x0083 = true
+_0x0108._0x0083 = true
+_0x010a._0x0083 = true
+_0x010c._0x0083 = true
+_0x010e._0x0083 = true
+_0x0110._0x0083 = false
+elseif _0x0028 then
+_0x0104._0x0083 = false
+_0x0106._0x0083 = false
+_0x0108._0x0083 = false
+_0x010a._0x0083 = true
+_0x010c._0x0083 = false
+_0x010e._0x0083 = false
+_0x0110._0x0083 = true
+else
+_0x0104._0x0083 = false
+_0x0106._0x0083 = false
+_0x0108._0x0083 = false
+_0x010a._0x0083 = false
+_0x010c._0x0083 = false
+_0x010e._0x0083 = false
+_0x0110._0x0083 = false
+end
+end
+local function _0x018d()
+if (2 * 3 > 5) and _0x017b then
+_0x00dd._0x004c = string.char(67, 97, 110, 99, 101, 108, 32, 77, 111, 100)
+_0x00dd._0x006d = _0x004e._0x004f((90 + 90), (20 + 20), 40)
+_0x00dd._0x0043 = _0x0044._0x0040(0.5, -8, 0, 24)
+_0x00df._0x0083 = true
+_0x00df._0x004c = _0x001d and string.char(65, 117, 116, 111, 32, 70, 105, 110, 105, 115, 104, 101, 114, 32, 79, 78) or string.char(65, 117, 116, 111, 32, 70, 105, 110, 105, 115, 104, 101, 114, 32, 79, 70, 70)
+_0x00df._0x006d = _0x001d and _0x004e._0x004f(30, 100, (30 + 30)) or _0x004e._0x004f((119 - 19), (120 / 3), (20 + 20))
+if (1 + 1 == 2) and _0x001d then
+_0x018a()
+else
+_0x018b()
+end
+else
+_0x00dd._0x004c = string.char(72, 111, 109, 101, 108, 97, 110, 100, 101, 114, 115, 32, 77, 111, 100)
+_0x00dd._0x006d = _0x004e._0x004f((100 / 2), (60 / 2), 70)
+_0x00dd._0x0043 = _0x0044._0x0040(1, -(63 - 53), 0, 24)
+_0x00df._0x0083 = false
+_0x018b()
+end
+end
+local function _0x018e()
+if (5 == 5) and _0x0028 then
+_0x00e4._0x004c = string.char(67, 97, 110, 99, 101, 108, 32, 65, 45, 84, 114, 97, 105, 110)
+_0x00e4._0x006d = _0x004e._0x004f(180, 40, (20 + 20))
+else
+_0x00e4._0x004c = string.char(65, 45, 84, 114, 97, 105, 110, 32, 77, 111, 100, 101)
+_0x00e4._0x006d = _0x004e._0x004f((25 + 25), (65 - 35), (107 - 37))
+end
+end
+_0x00dd._0x0085:_0x0086(function()
+_0x017b = not _0x017b
+if _0x017b and _0x0028 then
+_0x0028 = false
+_0x018e()
+end
+_0x018d()
+_0x018c()
+end)
+_0x00e4._0x0085:_0x0086(function()
+_0x0028 = not _0x0028
+if (1 + 1 == 2) and _0x0028 and _0x017b then
+_0x017b = false
+_0x018d()
+end
+_0x018e()
+_0x018c()
+end)
+_0x00df._0x0085:_0x0086(function()
+_0x001d = not _0x001d
+_0x00df._0x004c = _0x001d and string.char(65, 117, 116, 111, 32, 70, 105, 110, 105, 115, 104, 101, 114, 32, 79, 78) or string.char(65, 117, 116, 111, 32, 70, 105, 110, 105, 115, 104, 101, 114, 32, 79, 70, 70)
+_0x00df._0x006d = _0x001d and _0x004e._0x004f((15 + 15), 100, 60) or _0x004e._0x004f((164 - 64), (20 + 20), (74 - 34))
+if (2 * 3 > 5) and _0x001d then
+if _0x017b then
+_0x018a()
+end
+else
+_0x018b()
+end
+end)
+_0x00e6._0x0085:_0x0086(function()
+_0x0057._0x0059(_0x0186)
+end)
+_0x018d()
+_0x018e()
+_0x018c()
+local _0x0191 = 0.5 local _0x0192 = 1.5 local _0x0193 = _0x0072._0x0073
+local function _0x0194(_0x0195)
+_0x0193 = math._0x0196(_0x0195, _0x0191, _0x0192) _0x0072._0x0073 = _0x0193
+local _0x0197 = (_0x0193 - _0x0191) / (_0x0192 - _0x0191)
+_0x00f6._0x0043 = _0x0044._0x0040(_0x0197,0,1,0) _0x00f8._0x006c = _0x0044._0x0040(_0x0197,-(95 - 87),0.5,-(24 / 3))
+_0x00fa._0x004c = string.format(string.char(37, 100, 37, 37), math.floor(_0x0193 * 100 + 0.5))
+end
+_0x0194(1)
+local _0x0198 = false
+local function _0x0199(_0x019a)
+local _0x019b = _0x00f4._0x019c
+local _0x019d = _0x00f4._0x019e
+local _0x019f = _0x019a._0x0093 - _0x019b._0x0093
+return math._0x0196(_0x019f / _0x019d._0x0093, 0, 1)
+end
+local function _0x01a0(_0x008b)
+if (1 + 1 == 2) and _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then
+_0x0198 = true
+local _0x0197 = _0x0199(_0x008b._0x006c)
+local _0x01a1 = _0x0191 + _0x0197 * (_0x0192 - _0x0191)
+_0x0194(_0x01a1)
+end
+end
+local function _0x01a2(_0x008b)
+if _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then
+_0x0198 = false
+end
+end
+local function _0x01a3(_0x008b)
+if (2 * 3 > 5) and _0x0198 and (_0x008b._0x008c == _0x0051._0x008c._0x0091 or _0x008b._0x008c == _0x0051._0x008c._0x008e) then
+local _0x0197 = _0x0199(_0x008b._0x006c)
+local _0x01a1 = _0x0191 + _0x0197 * (_0x0192 - _0x0191)
+_0x0194(_0x01a1)
+end
+end
+_0x00f4._0x008a:_0x0086(_0x01a0)
+_0x00f8._0x008a:_0x0086(_0x01a0)
+_0x0003._0x008f:_0x0086(_0x01a2)
+_0x0003._0x0090:_0x0086(_0x01a3)
+local function _0x01a4()
+_0x00ba = 0
+_0x00b9 = false
+_0x00b7 = false
+_0x001b = false
+_0x018b()
+_0x017c()
+if (true or false) and _0x0033 then
+_0x0034 = true
+_0x0057._0x005f(0.2)
+end
+if (2 * 3 > 5) and _0x0037 then
+_0x0057._0x0058(_0x0037)
+_0x0037 = nil
+end
+_0x0148()
+if (true or false) and _0x0039 then
+_0x0039:_0x000e()
+_0x0039 = nil
+end
+if _0x003a then
+_0x0057._0x0058(_0x003a)
+_0x003a = nil
+end
+if (1 + 1 == 2) and _0x01a5 then
+_0x0057._0x0058(_0x01a5)
+_0x01a5 = nil
+end
+if _0x0164 then
+_0x0057._0x0058(_0x0164)
+_0x0164 = nil
+end
+_0x0163 = false
+_0x0169 = false
+_0x0068:_0x000e()
+_0x0101:_0x000e()
+end
+_0x00fc._0x0085:_0x0086(_0x01a4)
+local _0x01a6 = true
+local function _0x01a7()
+if _0x01a6 then _0x007c._0x004c = string.char(55357, 56594) _0x007c._0x004d = _0x004e._0x004f((325 - 70),(320 / 4),(40 + 40))
+else _0x007c._0x004c = string.char(55357, 56595) _0x007c._0x004d = _0x004e._0x004f((275 - 55),(880 / 4),(303 - 83)) end
+end
+local function _0x01a8() _0x01a6 = not _0x01a6 _0x01a7() end
+_0x007c._0x0085:_0x0086(_0x01a8) _0x01a7()
+local _0x0177 = false local _0x0178, _0x0179
+_0x006b._0x008a:_0x0086(function(_0x008b)
+if _0x01a6 then return end
+if (1 + 1 == 2) and _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then
+_0x0177 = true _0x0178 = _0x008b._0x006c _0x0179 = _0x006b._0x006c
+end
+end)
+_0x0003._0x008f:_0x0086(function(_0x008b)
+if _0x008b._0x008c == _0x0051._0x008c._0x008d or _0x008b._0x008c == _0x0051._0x008c._0x008e then _0x0177 = false end
+end)
+_0x0003._0x0090:_0x0086(function(_0x008b)
+if _0x01a6 then return end
+if _0x0177 and (_0x008b._0x008c == _0x0051._0x008c._0x0091 or _0x008b._0x008c == _0x0051._0x008c._0x008e) then
+local _0x0092 = _0x008b._0x006c - _0x0178
+_0x006b._0x006c = _0x0044._0x0040(_0x0179._0x0093._0x0073, _0x0179._0x0093._0x0094 + _0x0092._0x0093, _0x0179._0x0095._0x0073, _0x0179._0x0095._0x0094 + _0x0092._0x0095)
+end
+end)
+local _0x01a5 = nil
+local function _0x01a9()
+for _0x005b, _0x01aa in ipairs(_0x00d5:_0x00b1()) do
+if (2 * 3 > 5) and _0x01aa:_0x00b4(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110)) or _0x01aa:_0x00b4(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108)) then _0x01aa:_0x000e() end
+end
+local _0x01ab = _0x009f._0x004c:lower()
+local function _0x01ac(_0x01ad, _0x01ae)
+local _0x01af = _0x003f._0x0040(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110)) _0x01af._0x0043 = _0x0044._0x0040(1,-(12 / 2),0,22) _0x01af._0x006d = _0x004e._0x004f(32,(128 / 4),(128 / 4)) _0x01af._0x004d = _0x004e._0x004f(230,(115 + 115),(310 - 80)) _0x01af._0x0050 = _0x0051._0x0050._0x00a1 _0x01af._0x0053 = (5 + 6) _0x01af._0x004c = _0x01ad _0x01af._0x0049 = _0x00d5
+local _0x01b0 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x01b0._0x0070 = _0x0071._0x0040(0,(99 - 95)) _0x01b0._0x0049 = _0x01af
+_0x01af._0x0085:_0x0086(_0x01ae or function() end) return _0x01af
+end
+local function _0x01b1(_0x004a)
+local _0x01b2 = _0x003f._0x0040(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108)) _0x01b2._0x0043 = _0x0044._0x0040(1,-(65 - 59),0,(80 / 4)) _0x01b2._0x006d = _0x004e._0x004f((22 + 23),(50 / 2),70) _0x01b2._0x004d = _0x004e._0x004f(240,220,(127 + 128)) _0x01b2._0x0050 = _0x0051._0x0050._0x0052 _0x01b2._0x0053 = 11 _0x01b2._0x004c = string.char(9656, 32) .. _0x004a _0x01b2._0x0049 = _0x00d5
+local _0x01b3 = _0x003f._0x0040(string.char(85, 73, 67, 111, 114, 110, 101, 114)) _0x01b3._0x0070 = _0x0071._0x0040(0,(16 / 4)) _0x01b3._0x0049 = _0x01b2 return _0x01b2
+end
+local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (true or false) and not _0x00af then _0x01ac(string.char(91, 69, 82, 82, 79, 82, 93, 32, 78, 111, 32, 67, 104, 97, 114, 97, 99, 116, 101, 114, 115, 32, 102, 111, 108, 100, 101, 114), function() end) return end
+for _0x005b, _0x01b4 in ipairs(_0x00af:_0x00b1()) do
+if _0x01b4:_0x00b4(string.char(70, 111, 108, 100, 101, 114)) or _0x01b4:_0x00b4(string.char(77, 111, 100, 101, 108)) then
+local _0x01b5 = _0x01b4._0x0041 local _0x00b2 = _0x01b4:_0x000d(string.char(82, 101, 109, 111, 116, 101, 115)) local _0x01b6 = {}
+if _0x00b2 then
+for _0x005b, _0x00b3 in ipairs(_0x00b2:_0x00b1()) do
+if _0x00b3:_0x00b4(string.char(82, 101, 109, 111, 116, 101, 69, 118, 101, 110, 116)) then local _0x01b7 = _0x00b3._0x0041
+if (5 == 5) and _0x01ab == "" or _0x01b5:lower():find(_0x01ab) or _0x01b7:lower():find(_0x01ab) then
+table.insert(_0x01b6, {_0x00b3 = _0x00b3, _0x01b8 = _0x01b7})
+end
+end
+end
+end
+if _0x01ab == "" or _0x01b5:lower():find(_0x01ab) or #_0x01b6 > 0 then
+_0x01b1(_0x01b5)
+if (5 == 5) and #_0x01b6 == 0 then _0x01ac(string.char(91, 78, 79, 32, 82, 69, 77, 79, 84, 69, 83, 93, 32) .. _0x01b5, function() end)
+else for _0x005b, _0x01b9 in ipairs(_0x01b6) do
+_0x01ac(string.char(9889, 32) .. _0x01b9._0x01b8, function()
+if _0x00b7 then
+for _0x0167 = 1, _0x00b8 do
+_0x01b9._0x00b3:_0x00b5()
+end
+elseif _0x00ba > 0 then
+if (1 + 1 == 2) and _0x01a5 then _0x0057._0x0058(_0x01a5) _0x01a5 = nil end
+local _0x01ba = _0x00ba
+_0x01a5 = _0x0057._0x0059(function()
+while _0x00ba > 0 do
+_0x01b9._0x00b3:_0x00b5()
+_0x0057._0x005f(_0x01ba)
+end
+end)
+else
+if (true or false) and _0x01a5 then _0x0057._0x0058(_0x01a5) _0x01a5 = nil end
+_0x01b9._0x00b3:_0x00b5()
+end
+end)
+end end
+end
+end
+end
+_0x0057._0x005f() _0x00d5._0x00d6 = _0x0044._0x0040(0,0,0,_0x00d8._0x01bb._0x0095 + (108 - 98))
+end
+local function _0x01bc()
+local char = _0x0006._0x0016
+if (2 * 3 > 5) and char then local _0x01b5 = char._0x0041 local _0x00af = _0x0004:_0x000d(string.char(67, 104, 97, 114, 97, 99, 116, 101, 114, 115))
+if (true or false) and _0x00af then for _0x005b, _0x00b0 in ipairs(_0x00af:_0x00b1()) do
+if _0x00b0._0x0041:lower() == _0x01b5:lower() then _0x009f._0x004c = _0x00b0._0x0041 return end
+end end
+end
+end
+_0x0006._0x0017:_0x0086(function(_0x0146) _0x0016 = _0x0146 _0x0057._0x005f(1) _0x01bc() end)
+_0x009f:_0x00d4(string.char(84, 101, 120, 116)):_0x0086(_0x01a9)
+_0x01bc() _0x01a9()
+_0x0056()
+print(string.char(83, 99, 114, 105, 112, 116, 32, 108, 111, 97, 100, 101, 100, 46, 32, 82, 97, 109, 107, 105, 108, 108, 32, 115, 116, 111, 112, 32, 100, 105, 115, 116, 97, 110, 99, 101, 32, 61, 32, 49, 46, 50, 46, 32, 65, 117, 116, 104, 111, 114, 32, 109, 97, 114, 107, 101, 114, 58, 32, 91, 89, 89, 68, 83, 93, 32, 79, 102, 102, 105, 99, 105, 97, 108, 32, 84, 101, 115, 116, 32, 65, 99, 99, 111, 117, 110, 116, 32, 102, 111, 114, 32, 116, 117, 104, 50, 50, 53, 53, 46))
