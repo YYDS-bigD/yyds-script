@@ -1,274 +1,264 @@
--- YYDS Mouse U
--- U key / U button: free the mouse so you can click menus.
--- U again: restore original shift lock. Also repairs camera if the view went gray.
+-- YYDS Config Memory
+-- Saves DracoHub-style settings to the executor's local files.
+-- Rejoin / relog: run the script again and last keybinds come back.
+-- Needs executor file APIs: writefile / readfile / isfile / makefolder
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local pg = LocalPlayer:WaitForChild("PlayerGui")
 
-local old = pg:FindFirstChild("YYDSMouseU")
+local FOLDER = "DracoHub"
+local FILE = FOLDER .. "/config_" .. tostring(LocalPlayer.UserId) .. ".json"
+
+local function hasFiles()
+	return typeof(writefile) == "function"
+		and typeof(readfile) == "function"
+		and typeof(isfile) == "function"
+end
+
+local function ensureFolder()
+	if typeof(isfolder) == "function" and typeof(makefolder) == "function" then
+		if not isfolder(FOLDER) then
+			pcall(makefolder, FOLDER)
+		end
+	end
+end
+
+local function encode(tbl)
+	local ok, out = pcall(function()
+		return HttpService:JSONEncode(tbl)
+	end)
+	if ok then
+		return out
+	end
+	return nil
+end
+
+local function decode(str)
+	local ok, out = pcall(function()
+		return HttpService:JSONDecode(str)
+	end)
+	if ok and type(out) == "table" then
+		return out
+	end
+	return nil
+end
+
+local Defaults = {
+	uiScale = 1,
+	mouseU = "U",
+	lifeInsure = "R",
+	laserLow = "T",
+	laserHigh = "Y",
+	skill1 = "Z",
+	skill2 = "X",
+	skill3 = "C",
+	skill4 = "V",
+}
+
+local Config = {}
+for k, v in pairs(Defaults) do
+	Config[k] = v
+end
+
+local function loadConfig()
+	if not hasFiles() then
+		return false, "this executor has no writefile/readfile"
+	end
+	local okRead, raw = pcall(function()
+		if isfile(FILE) then
+			return readfile(FILE)
+		end
+		return nil
+	end)
+	if not okRead or type(raw) ~= "string" or raw == "" then
+		return false, "no saved file yet"
+	end
+	local data = decode(raw)
+	if not data then
+		return false, "bad json"
+	end
+	for k, v in pairs(data) do
+		if Defaults[k] ~= nil and type(v) == type(Defaults[k]) then
+			Config[k] = v
+		end
+	end
+	return true, "loaded"
+end
+
+local function saveConfig()
+	if not hasFiles() then
+		return false, "this executor has no writefile/readfile"
+	end
+	ensureFolder()
+	local raw = encode(Config)
+	if not raw then
+		return false, "encode fail"
+	end
+	local ok, err = pcall(writefile, FILE, raw)
+	if not ok then
+		return false, tostring(err)
+	end
+	return true, "saved"
+end
+
+local function keyFromName(name)
+	if type(name) ~= "string" or name == "" then
+		return nil
+	end
+	local ok, code = pcall(function()
+		return Enum.KeyCode[name]
+	end)
+	if ok and typeof(code) == "EnumItem" then
+		return code
+	end
+	return nil
+end
+
+local old = pg:FindFirstChild("YYDSConfigMemory")
 if old then
 	old:Destroy()
 end
 
-local env = getgenv()
-env._YYDSMouseUFree = false
-
-local saved = {
-	behavior = UIS.MouseBehavior,
-	icon = UIS.MouseIconEnabled,
-	cameraType = nil,
-	cameraSubject = nil,
-	cameraOffset = Vector3.zero,
-	autoRotate = true,
-}
-
-local conn
-
-local function charHum()
-	local char = LocalPlayer.Character
-	if not char then
-		return nil, nil
-	end
-	return char, char:FindFirstChildOfClass("Humanoid")
-end
-
-local function captureState()
-	saved.behavior = UIS.MouseBehavior
-	saved.icon = UIS.MouseIconEnabled
-	local cam = workspace.CurrentCamera
-	if cam then
-		saved.cameraType = cam.CameraType
-		saved.cameraSubject = cam.CameraSubject
-	end
-	local _, hum = charHum()
-	if hum then
-		saved.cameraOffset = hum.CameraOffset
-		saved.autoRotate = hum.AutoRotate
-	end
-end
-
-local function repairView()
-	local cam = workspace.CurrentCamera
-	local char, hum = charHum()
-	pcall(function()
-		if cam then
-			if cam.CameraType == Enum.CameraType.Scriptable then
-				cam.CameraType = saved.cameraType or Enum.CameraType.Custom
-			end
-			if hum and (not cam.CameraSubject or cam.CameraSubject == nil) then
-				cam.CameraSubject = hum
-			end
-		end
-		if hum then
-			hum.AutoRotate = saved.autoRotate ~= false
-		end
-		if char then
-			for _, d in ipairs(char:GetDescendants()) do
-				if d:IsA("BasePart") then
-					d.LocalTransparencyModifier = 0
-				end
-			end
-		end
-	end)
-end
-
-local function hookMouse()
-	if env._YYDSMouseUHooked then
-		return
-	end
-	if not hookmetamethod then
-		return
-	end
-	local wrap = newcclosure or function(f)
-		return f
-	end
-	local ok = pcall(function()
-		local oldNew
-		oldNew = hookmetamethod(game, "__newindex", wrap(function(self, key, value)
-			if env._YYDSMouseUFree and self == UIS and key == "MouseBehavior" then
-				if value ~= Enum.MouseBehavior.Default then
-					value = Enum.MouseBehavior.Default
-				end
-			end
-			return oldNew(self, key, value)
-		end))
-	end)
-	if ok then
-		env._YYDSMouseUHooked = true
-	end
-end
-
-local function applyFree()
-	hookMouse()
-	pcall(function()
-		UIS.MouseBehavior = Enum.MouseBehavior.Default
-	end)
-	pcall(function()
-		UIS.MouseIconEnabled = true
-	end)
-	local _, hum = charHum()
-	if hum then
-		pcall(function()
-			hum.CameraOffset = Vector3.zero
-			hum.AutoRotate = true
-		end)
-	end
-end
-
-local function applyLock()
-	pcall(function()
-		UIS.MouseBehavior = saved.behavior or Enum.MouseBehavior.LockCenter
-	end)
-	pcall(function()
-		UIS.MouseIconEnabled = saved.icon
-	end)
-	local _, hum = charHum()
-	if hum then
-		pcall(function()
-			hum.CameraOffset = saved.cameraOffset or Vector3.zero
-			hum.AutoRotate = saved.autoRotate ~= false
-		end)
-	end
-	repairView()
-end
-
 local gui = Instance.new("ScreenGui")
-gui.Name = "YYDSMouseU"
+gui.Name = "YYDSConfigMemory"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
-gui.DisplayOrder = 9999
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.DisplayOrder = 9998
 gui.Parent = pg
 
-local btn = Instance.new("TextButton")
-btn.Name = "UBtn"
-btn.Size = UDim2.new(0, 56, 0, 56)
-btn.Position = UDim2.new(0, 16, 0.5, -28)
-btn.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
-btn.BorderSizePixel = 0
-btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 24
-btn.Text = "U"
-btn.AutoButtonColor = true
-btn.Active = true
-btn.Parent = gui
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 318)
+frame.Position = UDim2.new(0, 16, 0.18, 0)
+frame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10)
-corner.Parent = btn
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -12, 0, 24)
+title.Position = UDim2.new(0, 8, 0, 6)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 13
+title.TextColor3 = Color3.fromRGB(235, 235, 235)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Text = "Config Memory"
+title.Parent = frame
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(80, 80, 88)
-stroke.Thickness = 1.5
-stroke.Parent = btn
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -16, 0, 32)
+status.Position = UDim2.new(0, 8, 1, -38)
+status.BackgroundTransparency = 1
+status.Font = Enum.Font.Gotham
+status.TextSize = 11
+status.TextColor3 = Color3.fromRGB(170, 170, 170)
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.TextWrapped = true
+status.Text = hasFiles() and ("file: " .. FILE) or "NO writefile on this executor"
+status.Parent = frame
 
-local tip = Instance.new("TextLabel")
-tip.Size = UDim2.new(0, 190, 0, 40)
-tip.Position = UDim2.new(0, 80, 0.5, -20)
-tip.BackgroundTransparency = 1
-tip.Font = Enum.Font.Gotham
-tip.TextSize = 12
-tip.TextColor3 = Color3.fromRGB(210, 210, 210)
-tip.TextXAlignment = Enum.TextXAlignment.Left
-tip.TextYAlignment = Enum.TextYAlignment.Center
-tip.TextWrapped = true
-tip.Text = "Shift Lock\nPress U to free mouse"
-tip.Parent = gui
+local function setStatus(text, good)
+	status.Text = text
+	status.TextColor3 = good and Color3.fromRGB(120, 210, 140) or Color3.fromRGB(230, 160, 80)
+end
 
-local dragging = false
-local dragMoved = false
-local dragStart
-local startPos
+local loaded, loadMsg = loadConfig()
+setStatus(loaded and ("loaded  " .. FILE) or loadMsg, loaded)
 
-btn.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragMoved = false
-		dragStart = input.Position
-		startPos = btn.Position
-	end
-end)
+local rows = {
+	{ key = "mouseU", label = "Mouse free" },
+	{ key = "lifeInsure", label = "Life Insure" },
+	{ key = "laserLow", label = "Laser Low" },
+	{ key = "laserHigh", label = "Laser High" },
+	{ key = "skill1", label = "Skill 1" },
+	{ key = "skill2", label = "Skill 2" },
+	{ key = "skill3", label = "Skill 3" },
+	{ key = "skill4", label = "Skill 4" },
+}
 
-btn.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
-end)
+local waitingKey = nil
+local bindButtons = {}
 
-UIS.InputChanged:Connect(function(input)
-	if not dragging then
-		return
-	end
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		local d = input.Position - dragStart
-		if math.abs(d.X) + math.abs(d.Y) > 6 then
-			dragMoved = true
+local function refreshBindTexts()
+	for _, row in ipairs(rows) do
+		local b = bindButtons[row.key]
+		if b then
+			b.Text = tostring(Config[row.key] or "?")
 		end
-		local np = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
-		btn.Position = np
-		tip.Position = UDim2.new(0, np.X.Offset + 64, np.Y.Scale, np.Y.Offset + 8)
-	end
-end)
-
-local function setFree(on)
-	if on then
-		captureState()
-		env._YYDSMouseUFree = true
-		applyFree()
-		btn.BackgroundColor3 = Color3.fromRGB(46, 130, 70)
-		stroke.Color = Color3.fromRGB(120, 210, 140)
-		tip.Text = "Mouse FREE\nPress U to restore lock"
-	else
-		env._YYDSMouseUFree = false
-		applyLock()
-		btn.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
-		stroke.Color = Color3.fromRGB(80, 80, 88)
-		tip.Text = "Shift Lock\nPress U to free mouse"
 	end
 end
 
-btn.MouseButton1Click:Connect(function()
-	if dragMoved then
-		return
-	end
-	setFree(not env._YYDSMouseUFree)
-end)
+local function makeRow(i, row)
+	local y = 32 + (i - 1) * 26
+	local lab = Instance.new("TextLabel")
+	lab.Size = UDim2.new(0, 150, 0, 22)
+	lab.Position = UDim2.new(0, 10, 0, y)
+	lab.BackgroundTransparency = 1
+	lab.Font = Enum.Font.Gotham
+	lab.TextSize = 12
+	lab.TextColor3 = Color3.fromRGB(210, 210, 210)
+	lab.TextXAlignment = Enum.TextXAlignment.Left
+	lab.Text = row.label
+	lab.Parent = frame
+
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0, 78, 0, 22)
+	b.Position = UDim2.new(1, -88, 0, y)
+	b.BackgroundColor3 = Color3.fromRGB(40, 40, 44)
+	b.TextColor3 = Color3.fromRGB(240, 240, 240)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 12
+	b.Text = tostring(Config[row.key] or "?")
+	b.Parent = frame
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5)
+	bindButtons[row.key] = b
+
+	b.MouseButton1Click:Connect(function()
+		waitingKey = row.key
+		b.Text = "..."
+		b.BackgroundColor3 = Color3.fromRGB(70, 110, 60)
+		setStatus("press a key for " .. row.label, true)
+	end)
+end
+
+for i, row in ipairs(rows) do
+	makeRow(i, row)
+end
 
 UIS.InputBegan:Connect(function(input, gp)
-	if input.KeyCode ~= Enum.KeyCode.U then
+	if not waitingKey then
+		return
+	end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then
 		return
 	end
 	if gp and UIS:GetFocusedTextBox() then
 		return
 	end
-	setFree(not env._YYDSMouseUFree)
-end)
-
-if conn then
-	conn:Disconnect()
-end
-conn = RunService.Heartbeat:Connect(function()
-	if not gui.Parent then
-		conn:Disconnect()
+	local name = input.KeyCode.Name
+	if name == "Unknown" then
 		return
 	end
-	if env._YYDSMouseUFree then
-		if UIS.MouseBehavior ~= Enum.MouseBehavior.Default then
-			pcall(function()
-				UIS.MouseBehavior = Enum.MouseBehavior.Default
-			end)
-		end
-		if UIS.MouseIconEnabled ~= true then
-			pcall(function()
-				UIS.MouseIconEnabled = true
-			end)
-		end
+	Config[waitingKey] = name
+	waitingKey = nil
+	refreshBindTexts()
+	for _, b in pairs(bindButtons) do
+		b.BackgroundColor3 = Color3.fromRGB(40, 40, 44)
 	end
+	local ok, msg = saveConfig()
+	setStatus(ok and ("saved " .. name) or msg, ok)
 end)
 
-hookMouse()
-print("[YYDS] Mouse U ready. Press U to free / restore mouse.")
+-- Example: these are the real checks your main script should use later.
+-- if input.KeyCode == keyFromName(Config.mouseU) then ...
+getgenv().DracoHubConfig = Config
+getgenv().DracoHubKey = keyFromName
+getgenv().DracoHubSaveConfig = saveConfig
+getgenv().DracoHubLoadConfig = loadConfig
+
+print("[YYDS] Config Memory ready")
+print("[YYDS] file = " .. FILE)
+print("[YYDS] writefile = " .. tostring(hasFiles()))
