@@ -1,0 +1,198 @@
+-- YYDS Mouse U
+-- Press U or tap the U button: free the mouse so you can click menus.
+-- Press U again: restore the game's original MouseBehavior / shift lock.
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local pg = LocalPlayer:WaitForChild("PlayerGui")
+
+local old = pg:FindFirstChild("YYDSMouseU")
+if old then
+	old:Destroy()
+end
+
+local free = false
+local savedBehavior = UIS.MouseBehavior
+local savedIcon = UIS.MouseIconEnabled
+local conn
+
+local function hookMouse()
+	if getgenv()._YYDSMouseUHooked then
+		return
+	end
+	if not hookmetamethod then
+		return
+	end
+	local wrap = newcclosure or function(f)
+		return f
+	end
+	local ok = pcall(function()
+		local oldIndex
+		oldIndex = hookmetamethod(game, "__index", wrap(function(self, key)
+			if free and self == UIS and key == "MouseBehavior" then
+				return Enum.MouseBehavior.Default
+			end
+			return oldIndex(self, key)
+		end))
+		local oldNew
+		oldNew = hookmetamethod(game, "__newindex", wrap(function(self, key, value)
+			if free and self == UIS and key == "MouseBehavior" then
+				return oldNew(self, key, Enum.MouseBehavior.Default)
+			end
+			return oldNew(self, key, value)
+		end))
+	end)
+	if ok then
+		getgenv()._YYDSMouseUHooked = true
+	end
+end
+
+local function applyFree()
+	hookMouse()
+	pcall(function()
+		UIS.MouseBehavior = Enum.MouseBehavior.Default
+	end)
+	pcall(function()
+		UIS.MouseIconEnabled = true
+	end)
+end
+
+local function applyLock()
+	pcall(function()
+		UIS.MouseBehavior = savedBehavior or Enum.MouseBehavior.LockCenter
+	end)
+	pcall(function()
+		UIS.MouseIconEnabled = savedIcon
+	end)
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "YYDSMouseU"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 9999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = pg
+
+local btn = Instance.new("TextButton")
+btn.Name = "UBtn"
+btn.Size = UDim2.new(0, 56, 0, 56)
+btn.Position = UDim2.new(0, 16, 0.5, -28)
+btn.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+btn.BorderSizePixel = 0
+btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 24
+btn.Text = "U"
+btn.AutoButtonColor = true
+btn.Active = true
+btn.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = btn
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(80, 80, 88)
+stroke.Thickness = 1.5
+stroke.Parent = btn
+
+local tip = Instance.new("TextLabel")
+tip.Size = UDim2.new(0, 170, 0, 40)
+tip.Position = UDim2.new(0, 80, 0.5, -20)
+tip.BackgroundTransparency = 1
+tip.Font = Enum.Font.Gotham
+tip.TextSize = 12
+tip.TextColor3 = Color3.fromRGB(210, 210, 210)
+tip.TextXAlignment = Enum.TextXAlignment.Left
+tip.TextYAlignment = Enum.TextYAlignment.Center
+tip.TextWrapped = true
+tip.Text = "Shift Lock\nPress U to free mouse"
+tip.Parent = gui
+
+local dragging = false
+local dragMoved = false
+local dragStart
+local startPos
+
+btn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragMoved = false
+		dragStart = input.Position
+		startPos = btn.Position
+	end
+end)
+
+btn.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if not dragging then
+		return
+	end
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		local d = input.Position - dragStart
+		if math.abs(d.X) + math.abs(d.Y) > 6 then
+			dragMoved = true
+		end
+		local np = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+		btn.Position = np
+		tip.Position = UDim2.new(0, np.X.Offset + 64, np.Y.Scale, np.Y.Offset + 8)
+	end
+end)
+
+local function setFree(on)
+	free = on
+	if free then
+		savedBehavior = UIS.MouseBehavior
+		savedIcon = UIS.MouseIconEnabled
+		applyFree()
+		btn.BackgroundColor3 = Color3.fromRGB(46, 130, 70)
+		stroke.Color = Color3.fromRGB(120, 210, 140)
+		tip.Text = "Mouse FREE\nPress U to restore lock"
+	else
+		applyLock()
+		btn.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+		stroke.Color = Color3.fromRGB(80, 80, 88)
+		tip.Text = "Shift Lock\nPress U to free mouse"
+	end
+end
+
+btn.MouseButton1Click:Connect(function()
+	if dragMoved then
+		return
+	end
+	setFree(not free)
+end)
+
+UIS.InputBegan:Connect(function(input, gp)
+	if input.KeyCode ~= Enum.KeyCode.U then
+		return
+	end
+	if gp and UIS:GetFocusedTextBox() then
+		return
+	end
+	setFree(not free)
+end)
+
+if conn then
+	conn:Disconnect()
+end
+conn = RunService.Heartbeat:Connect(function()
+	if not gui.Parent then
+		conn:Disconnect()
+		return
+	end
+	if free then
+		applyFree()
+	end
+end)
+
+hookMouse()
+print("[YYDS] Mouse U ready. Press U to free / restore mouse.")
